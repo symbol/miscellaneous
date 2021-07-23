@@ -1,3 +1,5 @@
+from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.core.nis1.Network import Address, Network
 from symbolchain.core.nis1.NetworkTimestamp import NetworkTimestamp
 
 from nem.pod import TransactionSnapshot
@@ -50,7 +52,7 @@ class NisClient:
         return account_info
 
     def get_harvests(self, address, start_id=None):
-        json_response = self._issue_account_request('harvests', address, start_id)
+        json_response = self._get_account_page('harvests', address, start_id)
 
         snapshots = []
         for json_harvest in json_response['data']:
@@ -65,16 +67,15 @@ class NisClient:
         return snapshots
 
     def get_transfers(self, address, start_id=None):
-        json_response = self._issue_account_request('transfers/all', address, start_id)
+        json_response = self._get_account_page('transfers/all', address, start_id)
 
         snapshots = []
         for json_transaction_and_meta in json_response['data']:
             json_transaction = json_transaction_and_meta['transaction']
+            json_meta = json_transaction_and_meta['meta']
 
             if TRANSACTION_TYPES['multisig'] == int(json_transaction['type']):
                 json_transaction = json_transaction['otherTrans']
-
-            json_meta = json_transaction_and_meta['meta']
 
             tag = 'supernode' if SUPERNODE_ACCOUNT_PUBLIC_KEY == json_transaction['signer'] else 'transfer'
             snapshot = TransactionSnapshot(address, tag)
@@ -85,7 +86,7 @@ class NisClient:
             snapshot.amount = amount_microxem / MICROXEM_PER_XEM
             snapshot.fee_paid = fee_microxem / MICROXEM_PER_XEM
             snapshot.height = int(json_meta['height'])
-            snapshot.collation_id = int(json_meta['id'])
+            snapshot.collation_id = json_meta['id']
             snapshot.hash = json_meta['hash']['data']
             snapshots.append(snapshot)
 
@@ -95,7 +96,6 @@ class NisClient:
     def _process_xem_changes(snapshot, json_transaction):
         amount_microxem = 0
         fee_microxem = 0
-
         transaction_type = int(json_transaction['type'])
         if TRANSACTION_TYPES['transfer'] == transaction_type:
             if json_transaction.get('mosaics'):
@@ -109,14 +109,19 @@ class NisClient:
 
             if snapshot.address != json_transaction['recipient']:
                 amount_microxem *= -1
-                fee_microxem = -int(json_transaction['fee'])
         else:
-            fee_microxem = -int(json_transaction['fee'])
             snapshot.comments = 'unsupported transaction of type {}'.format(transaction_type)
+
+        if NisClient._is_signer(snapshot.address, json_transaction):
+            fee_microxem = -int(json_transaction['fee'])
 
         return (amount_microxem, fee_microxem)
 
-    def _issue_account_request(self, name, address, start_id):
+    @staticmethod
+    def _is_signer(address, json_transaction):
+        return Address(address) == Network.MAINNET.public_key_to_address(PublicKey(json_transaction['signer']))
+
+    def _get_account_page(self, name, address, start_id):
         rest_path = 'account/{}?address={}'.format(name, address)
         if start_id:
             rest_path += '&id={}'.format(start_id)

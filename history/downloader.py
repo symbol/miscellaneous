@@ -103,6 +103,8 @@ def main():
         log.warn('output directory \'{}\' already exists'.format(args.output))
         return
 
+    log.info('starting downloads!')
+
     output_directory.mkdir(parents=True)
 
     resources = load_resources(args.input)
