@@ -1,10 +1,11 @@
 import argparse
+import random
 from collections import namedtuple
 from datetime import datetime
 
 from nem.CoinGeckoClient import CoinGeckoClient
 from nem.nis1.NisClient import NisClient
-from nem.ResourceLoader import ResourceLoader
+from nem.ResourceLoader import load_resources
 from nem.sym.SymClient import SymClient
 
 NetworkDescriptor = namedtuple('NetworkDescriptor', [
@@ -61,15 +62,16 @@ def create_sym_network_descriptor():
 
 
 class NetworkPrinter:
-    def __init__(self, network_descriptor, resources_path, network_printer_options):
+    def __init__(self, network_descriptor, resources, network_printer_options):
         self.show_zero_balances = network_printer_options.show_zero_balances
         self.use_friendly_names = network_printer_options.use_friendly_names
 
         self.friendly_name = network_descriptor.friendly_name
         self.row_view_factory = network_descriptor.row_view_factory
 
-        self.resources = ResourceLoader(network_descriptor.resources_name, resources_path)
-        self.api_client = network_descriptor.client_class(self.resources.get_random_node_host())
+        self.resources = resources
+        node = random.choice(self.resources.nodes.find_all_by_role(None))
+        self.api_client = network_descriptor.client_class(node.host)
 
         self.blocks_per_day = network_descriptor.blocks_per_day
         self.chain_height = self.api_client.get_chain_height()
@@ -79,7 +81,7 @@ class NetworkPrinter:
             group_description = '[{} @ {}] \033[36m{}\033[39m ACCOUNTS'.format(self.friendly_name, self.chain_height, group_name.upper())
 
             total_balance, num_matching_accounts = self._print_accounts(
-                [account_descriptor['address'] for account_descriptor in self.resources.get_account_descriptors(group_name)],
+                [account_descriptor.address for account_descriptor in self.resources.accounts.find_all_by_role(group_name)],
                 group_description)
 
             if not total_balance and not self.show_zero_balances:
@@ -131,8 +133,8 @@ class NetworkPrinter:
         if not self.use_friendly_names:
             return address
 
-        account_descriptor = self.resources.get_descriptor_by_address(address)
-        return account_descriptor['name'] if account_descriptor else address
+        account_descriptor = self.resources.accounts.find_by_address(address)
+        return account_descriptor.name if account_descriptor else address
 
     def _get_formatted_last_harvest_height(self, address):
         harvest_snapshots = self.api_client.get_harvests(address)
@@ -174,21 +176,20 @@ class NetworkPrinter:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='check NEM (NIS1 + SYM) balances')
+    parser = argparse.ArgumentParser(description='check balances of multiple accounts in a network')
     parser.add_argument('--resources', help='directory containing resources', required=True)
-    parser.add_argument('--nis-groups', help='nis account groups to include', type=str, nargs='+')
-    parser.add_argument('--sym-groups', help='symbol account groups to include', type=str, nargs='+')
+    parser.add_argument('--groups', help='account groups to include', type=str, nargs='+')
     parser.add_argument('--use-names', help='display friendly account names', action='store_true')
     parser.add_argument('--show-zero-balances', help='show zero balance accounts', action='store_true')
     args = parser.parse_args()
 
-    coin_gecko_client = CoinGeckoClient()
-    xem_price = coin_gecko_client.get_price_spot('nem', 'usd')
-    xym_price = coin_gecko_client.get_price_spot('symbol', 'usd')
+    resources = load_resources(args.resources)
 
-    print(' UTC Time: {0}'.format(datetime.utcnow()))
-    print('XEM Price: {0:.6f}'.format(xem_price))
-    print('XYM Price: {0:.6f}'.format(xym_price))
+    coin_gecko_client = CoinGeckoClient()
+    token_price = coin_gecko_client.get_price_spot(resources.ticker_name, 'usd')
+
+    print(' UTC Time: {}'.format(datetime.utcnow()))
+    print('{} Price: {:.6f}'.format(resources.currency_symbol.upper(), token_price))
     print()
 
     network_printer_options = NetworkPrinterOptions(**{
@@ -196,13 +197,13 @@ def main():
         'show_zero_balances': args.show_zero_balances
     })
 
-    if args.nis_groups:
-        printer = NetworkPrinter(create_nis_network_descriptor(), args.resources, network_printer_options)
-        printer.print_all(args.nis_groups, xem_price)
+    network_descriptor = {
+        'nis1': create_nis_network_descriptor(),
+        'symbol': create_sym_network_descriptor(),
+    }[resources.friendly_name]
 
-    if args.sym_groups:
-        printer = NetworkPrinter(create_sym_network_descriptor(), args.resources, network_printer_options)
-        printer.print_all(args.sym_groups, xym_price)
+    printer = NetworkPrinter(network_descriptor, resources, network_printer_options)
+    printer.print_all(args.groups, token_price)
 
 
 if '__main__' == __name__:

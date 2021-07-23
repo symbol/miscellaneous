@@ -1,0 +1,13 @@
+friendly_name: nis1
+ticker_name: nem
+currency_symbol: xem
+ico_price: 0  # not tax advice
+
+accounts:
+  - { address: NB2MQ7EA2YG2RRXHIHO4HA2WCYUYCX5BDQG5CQNW, name: Group1, roles: [group] }
+  - { address: NDBRF5NM466LB6CINFIXLGRIGDL36L7B667WMVQ5, name: Group2, roles: [group] }
+  - { address: NBRXCR7QJ56CTX5HMIP7VHDMYZTYCEN3DZAIK6O4, name: Group3, roles: [group] }
+  - { address: NA6U4U4Z5J3L5ZKSMZD5DKPWSVT5DASJNO4V5RAA, name: Trading1, roles: [trading] }
+
+nodes:
+  - host: 54.170.97.221

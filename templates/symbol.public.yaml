@@ -1,0 +1,17 @@
+friendly_name: symbol
+ticker_name: symbol
+currency_symbol: xym
+ico_price: 0  # not tax advice
+
+accounts:
+  - { address: NAMYQXVBMLQ5HLYK3GQLMKFDLHGIXPPAU5VGFOI, name: Continuity, roles: [trust] }
+  - { address: NBUTOBVT5JQDCV6UEPCPFHWWOAOPOCLA5AY5FLI, name: Sink1, roles: [sink] }
+  - { address: NC733XE7DF46Q7QYLIIZBBSCJN2BEEP5FQ6PAYA, name: Sink2, roles: [sink] }
+  - { address: NBDTBUD6R32ZYJWDEWLJM4YMOX3OOILHGDUMTSA, name: Sink3, roles: [sink] }
+
+nodes:
+  - host: ngl-dual-001.symbolblockchain.io
+  - host: ngl-dual-002.symbolblockchain.io
+  - host: ngl-dual-003.symbolblockchain.io
+  - host: ngl-dual-004.symbolblockchain.io
+  - host: ngl-dual-005.symbolblockchain.io
