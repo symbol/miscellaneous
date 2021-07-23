@@ -1,7 +1,14 @@
+from symbolchain.core.nis1.NetworkTimestamp import NetworkTimestamp
+
 from nem.pod import TransactionSnapshot
 from nem.TimeoutHTTPAdapter import create_http_session
 
 MICROXEM_PER_XEM = 1000000.0
+SUPERNODE_ACCOUNT_PUBLIC_KEY = 'd96366cdd47325e816ff86039a6477ef42772a455023ccddae4a0bd5d27b8d23'
+TRANSACTION_TYPES = {
+    'transfer': 257,
+    'multisig': 4100
+}
 
 
 class AccountInfo:
@@ -49,13 +56,65 @@ class NisClient:
         for json_harvest in json_response['data']:
             snapshot = TransactionSnapshot(address, 'harvest')
 
-            snapshot.timestamp = json_harvest['timeStamp']
+            snapshot.timestamp = NetworkTimestamp(json_harvest['timeStamp']).to_datetime()
             snapshot.amount = int(json_harvest['totalFee']) / MICROXEM_PER_XEM
             snapshot.height = int(json_harvest['height'])
             snapshot.collation_id = int(json_harvest['id'])
             snapshots.append(snapshot)
 
         return snapshots
+
+    def get_transfers(self, address, start_id=None):
+        json_response = self._issue_account_request('transfers/all', address, start_id)
+
+        snapshots = []
+        for json_transaction_and_meta in json_response['data']:
+            json_transaction = json_transaction_and_meta['transaction']
+
+            if TRANSACTION_TYPES['multisig'] == int(json_transaction['type']):
+                json_transaction = json_transaction['otherTrans']
+
+            json_meta = json_transaction_and_meta['meta']
+
+            tag = 'supernode' if SUPERNODE_ACCOUNT_PUBLIC_KEY == json_transaction['signer'] else 'transfer'
+            snapshot = TransactionSnapshot(address, tag)
+            snapshot.timestamp = NetworkTimestamp(json_transaction['timeStamp']).to_datetime()
+
+            (amount_microxem, fee_microxem) = self._process_xem_changes(snapshot, json_transaction)
+
+            snapshot.amount = amount_microxem / MICROXEM_PER_XEM
+            snapshot.fee_paid = fee_microxem / MICROXEM_PER_XEM
+            snapshot.height = int(json_meta['height'])
+            snapshot.collation_id = int(json_meta['id'])
+            snapshot.hash = json_meta['hash']['data']
+            snapshots.append(snapshot)
+
+        return snapshots
+
+    @staticmethod
+    def _process_xem_changes(snapshot, json_transaction):
+        amount_microxem = 0
+        fee_microxem = 0
+
+        transaction_type = int(json_transaction['type'])
+        if TRANSACTION_TYPES['transfer'] == transaction_type:
+            if json_transaction.get('mosaics'):
+                multiplier = int(json_transaction['amount'])
+
+                for json_mosaic in json_transaction['mosaics']:
+                    if 'nem' == json_mosaic['mosaicId']['namespaceId'] and 'xem' == json_mosaic['mosaicId']['name']:
+                        amount_microxem += multiplier * int(json_mosaic['quantity'])
+            else:
+                amount_microxem = int(json_transaction['amount'])
+
+            if snapshot.address != json_transaction['recipient']:
+                amount_microxem *= -1
+                fee_microxem = -int(json_transaction['fee'])
+        else:
+            fee_microxem = -int(json_transaction['fee'])
+            snapshot.comments = 'unsupported transaction of type {}'.format(transaction_type)
+
+        return (amount_microxem, fee_microxem)
 
     def _issue_account_request(self, name, address, start_id):
         rest_path = 'account/{}?address={}'.format(name, address)

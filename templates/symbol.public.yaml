@@ -1,7 +1,7 @@
 friendly_name: symbol
 ticker_name: symbol
 currency_symbol: xym
-ico_price: 0  # not tax advice
+premarket_price: 0  # not tax advice
 
 accounts:
   - { address: NAMYQXVBMLQ5HLYK3GQLMKFDLHGIXPPAU5VGFOI, name: Continuity, roles: [trust] }

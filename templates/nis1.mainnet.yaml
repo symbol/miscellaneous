@@ -1,7 +1,7 @@
 friendly_name: nis1
 ticker_name: nem
 currency_symbol: xem
-ico_price: 0  # not tax advice
+premarket_price: 0  # not tax advice
 
 accounts:
   - { address: NB2MQ7EA2YG2RRXHIHO4HA2WCYUYCX5BDQG5CQNW, name: Group1, roles: [group] }
