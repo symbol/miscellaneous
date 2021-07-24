@@ -3,7 +3,7 @@ import csv
 
 from zenlog import log
 
-from history.constants import SUMMARY_FIELD_NAMES
+from history.constants import GROUPER_FIELD_NAMES
 from nem.pod import AugmentedTransactionSnapshot
 
 
@@ -17,12 +17,12 @@ class GroupKey():
         return '{}::{}::{}'.format(self.time_point, self.tag, self.account_type)
 
 
-class Summarizer():
+class Grouper():
     def __init__(self, mode):
         self.mode = mode
 
         self.map = dict()
-        self.field_names = SUMMARY_FIELD_NAMES
+        self.field_names = GROUPER_FIELD_NAMES
         self.column_names = []
 
     def load(self, filename):
@@ -92,7 +92,7 @@ class Summarizer():
         snapshot.height = max(snapshot.height, new_snapshot.height)
 
     def save(self, filename):
-        log.info('saving {} summary report to {}'.format(self.mode, filename))
+        log.info('saving {} grouped report to {}'.format(self.mode, filename))
 
         with open(filename, 'w', newline='') as outfile:
             csv_writer = csv.DictWriter(outfile, self.field_names, extrasaction='ignore')
@@ -103,16 +103,16 @@ class Summarizer():
 
 
 def main():
-    parser = argparse.ArgumentParser(description='generate summary')
+    parser = argparse.ArgumentParser(description='produces grouped report by aggregating input data based on mode')
     parser.add_argument('--input', help='input filename', required=True)
     parser.add_argument('--output', help='output filename', required=True)
     parser.add_argument('--mode', help='aggregation mode', choices=('daily', 'account', 'tag', 'account_tag'), required=True)
 
     args = parser.parse_args()
 
-    summarizer = Summarizer(args.mode)
-    summarizer.load(args.input)
-    summarizer.save(args.output)
+    grouper = Grouper(args.mode)
+    grouper.load(args.input)
+    grouper.save(args.output)
 
 
 if '__main__' == __name__:
