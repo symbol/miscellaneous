@@ -51,6 +51,11 @@ class NisClient:
         account_info.remote_status = json_meta['remoteStatus']
         return account_info
 
+    def get_historical_balance(self, address, height):
+        rest_path = 'account/historical/get?address={}&startHeight={height}&endHeight={height}&increment=1'.format(address, height=height)
+        json_response = self._get_json(rest_path)
+        return float(json_response['data'][0]['balance']) / MICROXEM_PER_XEM
+
     def get_harvests(self, address, start_id=None):
         json_response = self._get_account_page('harvests', address, start_id)
 

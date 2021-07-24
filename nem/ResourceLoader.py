@@ -27,6 +27,6 @@ def load_resources(resources_path):
         })
 
 
-def create_blockchain_api_client(resources):
-    node_host = random.choice(resources.nodes.find_all_by_role(None)).host
+def create_blockchain_api_client(resources, node_role=None):
+    node_host = random.choice(resources.nodes.find_all_by_role(node_role)).host
     return NisClient(node_host) if 'nis1' == resources.friendly_name else SymClient(node_host)
