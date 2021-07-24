@@ -3,6 +3,7 @@ import csv
 
 from zenlog import log
 
+from history.constants import SUMMARY_FIELD_NAMES
 from nem.pod import AugmentedTransactionSnapshot
 
 
@@ -21,9 +22,7 @@ class Summarizer():
         self.mode = mode
 
         self.map = dict()
-        self.field_names = [
-            'timestamp', 'fiat_amount', 'fiat_fee_paid', 'amount', 'fee_paid', 'price', 'height', 'address', 'tag', 'comments'
-        ]
+        self.field_names = SUMMARY_FIELD_NAMES
         self.column_names = []
 
     def load(self, filename):

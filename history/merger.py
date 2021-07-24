@@ -5,6 +5,7 @@ from pathlib import Path
 from zenlog import log
 
 import nem.pod
+from history.constants import MERGER_FIELD_NAMES
 
 
 class TransactionsLoader():
@@ -84,9 +85,7 @@ class TransactionsLoader():
         self.transaction_snapshots.sort(key=lambda snapshot: snapshot.timestamp)
 
         with open(filename, 'w', newline='') as outfile:
-            field_names = [
-                'timestamp', 'fiat_amount', 'fiat_fee_paid', 'amount', 'fee_paid', 'price', 'height', 'address', 'tag', 'comments', 'hash'
-            ]
+            field_names = MERGER_FIELD_NAMES
             column_headers = field_names[:1] + [
                 '{}_amount'.format(self.currency),
                 '{}_fee_paid'.format(self.currency),
