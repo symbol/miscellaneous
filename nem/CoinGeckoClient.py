@@ -1,13 +1,5 @@
+from nem.pod import PriceSnapshot
 from nem.TimeoutHTTPAdapter import create_http_session
-
-
-class PriceSnapshot():
-    def __init__(self, date):
-        self.date = date
-        self.price = 0
-        self.volume = 0
-        self.market_cap = 0
-        self.comments = None
 
 
 class CoinGeckoClient:
