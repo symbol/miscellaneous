@@ -30,15 +30,11 @@ class Grouper():
 
         with open(filename, 'r') as infile:
             csv_reader = csv.DictReader(infile, self.field_names)
+            self.column_names = next(csv_reader)  # skip header
 
             for row in csv_reader:
                 snapshot = AugmentedTransactionSnapshot()
                 snapshot.__dict__.update(row)
-
-                if 'timestamp' == snapshot.timestamp:
-                    self.column_names = row
-                    continue
-
                 snapshot.fix_types(date_only=True)
 
                 group_key = self._make_group_key(snapshot)
