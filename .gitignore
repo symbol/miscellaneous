@@ -11,4 +11,4 @@ working/
 build/
 dist/
 *.egg-info/
-_taxout/
+_histout/

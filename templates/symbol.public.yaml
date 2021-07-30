@@ -5,9 +5,9 @@ premarket_price: 0  # not tax advice
 
 accounts:
   - { address: NAMYQXVBMLQ5HLYK3GQLMKFDLHGIXPPAU5VGFOI, name: Continuity, roles: [trust] }
-  - { address: NBUTOBVT5JQDCV6UEPCPFHWWOAOPOCLA5AY5FLI, name: Sink1, roles: [sink] }
-  - { address: NC733XE7DF46Q7QYLIIZBBSCJN2BEEP5FQ6PAYA, name: Sink2, roles: [sink] }
-  - { address: NBDTBUD6R32ZYJWDEWLJM4YMOX3OOILHGDUMTSA, name: Sink3, roles: [sink] }
+  - { address: NBMDALVKGYK562LXSESZT6FFNI65FDXFY5VOXSQ, name: Core1, roles: [core] }
+  - { address: NABH3A5VDLYAVA73OV246JTVMAIPD2WEMAQL27I, name: Core2, roles: [core] }
+  - { address: NAL4XHZU6MANNNFQI4Z2WNMU3KRI2YW2MRRMHLI, name: Core3, roles: [core] }
 
 nodes:
   - host: ngl-dual-001.symbolblockchain.io
