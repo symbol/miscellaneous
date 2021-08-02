@@ -1,15 +1,12 @@
 import argparse
-import random
 from collections import namedtuple
 from datetime import datetime
 
 from nem.CoinGeckoClient import CoinGeckoClient
-from nem.nis1.NisClient import NisClient
-from nem.ResourceLoader import load_resources
-from nem.sym.SymClient import SymClient
+from nem.ResourceLoader import create_blockchain_api_client, load_resources
 
 NetworkDescriptor = namedtuple('NetworkDescriptor', [
-    'friendly_name', 'resources_name', 'blocks_per_day', 'client_class', 'row_view_factory'
+    'friendly_name', 'resources_name', 'blocks_per_day', 'row_view_factory'
 ])
 AccountRowView = namedtuple('AccountRowView', ['address', 'public_key', 'account_type', 'balance',  'importance', 'percent_vested'])
 NetworkPrinterOptions = namedtuple('NetworkPrinterOptions', ['use_friendly_names', 'show_zero_balances'])
@@ -22,8 +19,6 @@ def create_nis_network_descriptor():
         'friendly_name': 'NIS',
         'resources_name': 'nis1.mainnet',
         'blocks_per_day': 1440,
-
-        'client_class': NisClient,
 
         'row_view_factory': lambda account_info: AccountRowView(**{
             'address': account_info.address,
@@ -42,8 +37,6 @@ def create_sym_network_descriptor():
         'friendly_name': 'SYMBOL',
         'resources_name': 'sym.mainnet',
         'blocks_per_day': 2880,
-
-        'client_class': SymClient,
 
         'row_view_factory': lambda account_info: AccountRowView(**{
             'address': account_info.address,
@@ -70,8 +63,7 @@ class NetworkPrinter:
         self.row_view_factory = network_descriptor.row_view_factory
 
         self.resources = resources
-        node = random.choice(self.resources.nodes.find_all_by_role(None))
-        self.api_client = network_descriptor.client_class(node.host)
+        self.api_client = create_blockchain_api_client(self.resources)
 
         self.blocks_per_day = network_descriptor.blocks_per_day
         self.chain_height = self.api_client.get_chain_height()
