@@ -4,7 +4,7 @@ from pathlib import Path
 
 from zenlog import log
 
-import nem.pod
+import core.pod
 from history.constants import MERGER_FIELD_NAMES
 
 
@@ -25,7 +25,7 @@ class TransactionsLoader():
             csv_reader = csv.DictReader(infile)
 
             for row in csv_reader:
-                snapshot = nem.pod.PriceSnapshot(None)
+                snapshot = core.pod.PriceSnapshot(None)
                 snapshot.__dict__.update(row)
                 snapshot.fix_types()
 
@@ -38,7 +38,7 @@ class TransactionsLoader():
             csv_reader = csv.DictReader(infile)
 
             for row in csv_reader:
-                snapshot = nem.pod.AugmentedTransactionSnapshot()
+                snapshot = core.pod.AugmentedTransactionSnapshot()
                 snapshot.__dict__.update(row)
                 snapshot.fix_types()
 

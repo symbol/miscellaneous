@@ -5,8 +5,8 @@ import yaml
 from symbolchain.core.AccountDescriptorRepository import AccountDescriptorRepository
 from symbolchain.core.NodeDescriptorRepository import NodeDescriptorRepository
 
-from nem.nis1.NisClient import NisClient
-from nem.sym.SymClient import SymClient
+from core.NemClient import NemClient
+from core.SymbolClient import SymbolClient
 
 Resources = namedtuple('Resources', [
     'friendly_name', 'ticker_name', 'currency_symbol', 'premarket_price', 'accounts', 'nodes'
@@ -29,4 +29,4 @@ def load_resources(resources_path):
 
 def create_blockchain_api_client(resources, node_role=None):
     node_host = random.choice(resources.nodes.find_all_by_role(node_role)).host
-    return NisClient(node_host) if 'nis1' == resources.friendly_name else SymClient(node_host)
+    return NemClient(node_host) if 'nis1' == resources.friendly_name else SymbolClient(node_host)

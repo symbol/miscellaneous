@@ -1,12 +1,12 @@
 from binascii import unhexlify
 
 from symbolchain.core.CryptoTypes import PublicKey
-from symbolchain.core.sym.Network import Address, Network
-from symbolchain.core.sym.NetworkTimestamp import NetworkTimestamp
+from symbolchain.core.symbol.Network import Address, Network
+from symbolchain.core.symbol.NetworkTimestamp import NetworkTimestamp
 from zenlog import log
 
-from nem.pod import TransactionSnapshot
-from nem.TimeoutHTTPAdapter import create_http_session
+from core.pod import TransactionSnapshot
+from core.TimeoutHTTPAdapter import create_http_session
 
 XYM_MOSAIC_IDS = ['6BED913FA20223F8', 'E74B99BA41F4AFEE']
 MICROXYM_PER_XYM = 1000000.0
@@ -34,7 +34,7 @@ class AccountInfo:
         self.remote_status = None
 
 
-class SymClient:
+class SymbolClient:
     def __init__(self, host):
         self.session = create_http_session()
         self.node_host = host
@@ -139,9 +139,9 @@ class SymClient:
                 continue
 
             direction = 0
-            if SymClient._is_signer(address, json_transaction):
+            if SymbolClient._is_signer(address, json_transaction):
                 direction = -1
-            elif SymClient._is_recipient(address, json_transaction):
+            elif SymbolClient._is_recipient(address, json_transaction):
                 direction = 1
 
             for json_mosaic in json_transaction['mosaics']:

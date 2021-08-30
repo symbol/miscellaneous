@@ -2,8 +2,8 @@ import argparse
 from collections import namedtuple
 from datetime import datetime
 
-from nem.CoinGeckoClient import CoinGeckoClient
-from nem.ResourceLoader import create_blockchain_api_client, load_resources
+from core.CoinGeckoClient import CoinGeckoClient
+from core.ResourceLoader import create_blockchain_api_client, load_resources
 
 NetworkDescriptor = namedtuple('NetworkDescriptor', [
     'friendly_name', 'resources_name', 'blocks_per_day', 'row_view_factory'

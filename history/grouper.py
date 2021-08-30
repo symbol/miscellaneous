@@ -3,8 +3,8 @@ import csv
 
 from zenlog import log
 
+from core.pod import AugmentedTransactionSnapshot
 from history.constants import GROUPER_FIELD_NAMES
-from nem.pod import AugmentedTransactionSnapshot
 
 
 class GroupKey():

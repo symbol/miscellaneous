@@ -1,5 +1,5 @@
-from nem.pod import PriceSnapshot
-from nem.TimeoutHTTPAdapter import create_http_session
+from core.pod import PriceSnapshot
+from core.TimeoutHTTPAdapter import create_http_session
 
 
 class CoinGeckoClient:

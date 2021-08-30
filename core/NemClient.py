@@ -1,9 +1,9 @@
 from symbolchain.core.CryptoTypes import PublicKey
-from symbolchain.core.nis1.Network import Address, Network
-from symbolchain.core.nis1.NetworkTimestamp import NetworkTimestamp
+from symbolchain.core.nem.Network import Address, Network
+from symbolchain.core.nem.NetworkTimestamp import NetworkTimestamp
 
-from nem.pod import TransactionSnapshot
-from nem.TimeoutHTTPAdapter import create_http_session
+from core.pod import TransactionSnapshot
+from core.TimeoutHTTPAdapter import create_http_session
 
 MICROXEM_PER_XEM = 1000000.0
 SUPERNODE_ACCOUNT_PUBLIC_KEY = 'd96366cdd47325e816ff86039a6477ef42772a455023ccddae4a0bd5d27b8d23'
@@ -25,7 +25,7 @@ class AccountInfo:
         self.remote_status = None
 
 
-class NisClient:
+class NemClient:
     def __init__(self, host):
         self.session = create_http_session()
         self.node_host = host
@@ -117,7 +117,7 @@ class NisClient:
         else:
             snapshot.comments = 'unsupported transaction of type {}'.format(transaction_type)
 
-        if NisClient._is_signer(snapshot.address, json_transaction):
+        if NemClient._is_signer(snapshot.address, json_transaction):
             fee_microxem = -int(json_transaction['fee'])
 
         return (amount_microxem, fee_microxem)
