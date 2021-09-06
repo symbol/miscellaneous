@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - 3.6
+
+cache: pip
+
+install:
+  - pip install -r lint_requirements.txt
+  - pip install -r requirements.txt
+
+jobs:
+  include:
+    - stage: lint
+      script:
+        - isort --check-only --line-length 140 core health history
+        - pycodestyle --config=.pycodestyle -- core health history
+        - pylint --load-plugins pylint_quotes -- core health history

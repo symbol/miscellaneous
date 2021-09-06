@@ -1,0 +1,5 @@
+PyYAML==5.4.1
+requests==2.26.0
+symbol-sdk-core-python==2.0.0
+urllib3==1.26.6
+zenlog==1.1

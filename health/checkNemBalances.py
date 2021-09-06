@@ -14,40 +14,38 @@ NetworkPrinterOptions = namedtuple('NetworkPrinterOptions', ['use_friendly_names
 
 # region descriptors
 
-def create_nem_network_descriptor():
-    return NetworkDescriptor(**{
-        'friendly_name': 'NEM',
-        'resources_name': 'nem.mainnet',
-        'blocks_per_day': 1440,
+nem_network_descriptor = NetworkDescriptor(**{
+    'friendly_name': 'NEM',
+    'resources_name': 'nem.mainnet',
+    'blocks_per_day': 1440,
 
-        'row_view_factory': lambda account_info: AccountRowView(**{
-            'address': account_info.address,
-            'public_key': account_info.public_key,
-            'account_type': account_info.remote_status,
+    'row_view_factory': lambda account_info: AccountRowView(**{
+        'address': account_info.address,
+        'public_key': account_info.public_key,
+        'account_type': account_info.remote_status,
 
-            'balance': account_info.balance,
-            'importance': account_info.importance,
-            'percent_vested': 0 if not account_info.balance else account_info.vested_balance / account_info.balance
-        })
+        'balance': account_info.balance,
+        'importance': account_info.importance,
+        'percent_vested': 0 if not account_info.balance else account_info.vested_balance / account_info.balance
     })
+})
 
 
-def create_symbol_network_descriptor():
-    return NetworkDescriptor(**{
-        'friendly_name': 'SYMBOL',
-        'resources_name': 'symbol.mainnet',
-        'blocks_per_day': 2880,
+symbol_network_descriptor = NetworkDescriptor(**{
+    'friendly_name': 'SYMBOL',
+    'resources_name': 'symbol.mainnet',
+    'blocks_per_day': 2880,
 
-        'row_view_factory': lambda account_info: AccountRowView(**{
-            'address': account_info.address,
-            'public_key': account_info.public_key,
-            'account_type': account_info.remote_status,
+    'row_view_factory': lambda account_info: AccountRowView(**{
+        'address': account_info.address,
+        'public_key': account_info.public_key,
+        'account_type': account_info.remote_status,
 
-            'balance': account_info.balance,
-            'importance': account_info.importance,
-            'percent_vested': None
-        })
+        'balance': account_info.balance,
+        'importance': account_info.importance,
+        'percent_vested': None
     })
+})
 
 # endregion
 
@@ -189,10 +187,7 @@ def main():
         'show_zero_balances': args.show_zero_balances
     })
 
-    network_descriptor = {
-        'nem': create_nem_network_descriptor(),
-        'symbol': create_symbol_network_descriptor(),
-    }[resources.friendly_name]
+    network_descriptor = {'nem': nem_network_descriptor, 'symbol': symbol_network_descriptor}[resources.friendly_name]
 
     printer = NetworkPrinter(network_descriptor, resources, network_printer_options)
     printer.print_all(args.groups, token_price)
