@@ -152,7 +152,7 @@ class SymbolClient:
 
     @staticmethod
     def _is_signer(address, json_transaction):
-        return Address(address) == Network.PUBLIC.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
+        return Address(address) == Network.MAINNET.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
 
     @staticmethod
     def _is_recipient(address, json_transaction):

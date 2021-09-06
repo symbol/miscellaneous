@@ -6,7 +6,7 @@
 
 _check balances of multiple accounts in a network_
 
-Prints balance and last harvest information for a set of NIS1 and/or Symbol accounts.
+Prints balance and last harvest information for a set of NEM and/or Symbol accounts.
 
 Example: load accounts and nodes from `templates/symbol.public.yaml` and print all accounts with role `core`.
 
@@ -32,7 +32,7 @@ XYM Price: 0.115421
 
 ### downloader
 
-_download transactions from nis1 or symbol networks_
+_download transactions from nem or symbol networks_
 
 Retrieves balance change events for a set of accounts over a specified date range.
 

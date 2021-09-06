@@ -89,7 +89,7 @@ class PriceDownloader:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='download transactions from nis1 or symbol networks',
+        description='download transactions from nem or symbol networks',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--input', help='input resources file', required=True)
     parser.add_argument('--output', help='output directory', required=True)

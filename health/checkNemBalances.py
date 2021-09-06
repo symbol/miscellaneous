@@ -14,10 +14,10 @@ NetworkPrinterOptions = namedtuple('NetworkPrinterOptions', ['use_friendly_names
 
 # region descriptors
 
-def create_nis_network_descriptor():
+def create_nem_network_descriptor():
     return NetworkDescriptor(**{
-        'friendly_name': 'NIS',
-        'resources_name': 'nis1.mainnet',
+        'friendly_name': 'NEM',
+        'resources_name': 'nem.mainnet',
         'blocks_per_day': 1440,
 
         'row_view_factory': lambda account_info: AccountRowView(**{
@@ -32,10 +32,10 @@ def create_nis_network_descriptor():
     })
 
 
-def create_sym_network_descriptor():
+def create_symbol_network_descriptor():
     return NetworkDescriptor(**{
         'friendly_name': 'SYMBOL',
-        'resources_name': 'sym.mainnet',
+        'resources_name': 'symbol.mainnet',
         'blocks_per_day': 2880,
 
         'row_view_factory': lambda account_info: AccountRowView(**{
@@ -190,8 +190,8 @@ def main():
     })
 
     network_descriptor = {
-        'nis1': create_nis_network_descriptor(),
-        'symbol': create_sym_network_descriptor(),
+        'nem': create_nem_network_descriptor(),
+        'symbol': create_symbol_network_descriptor(),
     }[resources.friendly_name]
 
     printer = NetworkPrinter(network_descriptor, resources, network_printer_options)
