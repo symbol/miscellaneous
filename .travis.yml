@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - 3.6
+  - 3.7
 
 cache: pip
 
@@ -13,6 +13,11 @@ jobs:
   include:
     - stage: lint
       script:
-        - isort --check-only --line-length 140 core health history
-        - pycodestyle --config=.pycodestyle -- core health history
-        - pylint --load-plugins pylint_quotes -- core health history
+        - isort --check-only --line-length 140 core health history scripts
+        - pycodestyle --config=.pycodestyle -- core health history scripts
+        - pylint --load-plugins pylint_quotes -- core health history scripts
+
+  include:
+    - stage: run scripts
+      script:
+        - python -m scripts.verify_account_ownership --input scripts/samples/verify_account_ownership.yaml

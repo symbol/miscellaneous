@@ -1,0 +1,75 @@
+mnemonics:
+  - name: alpaca
+    mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+    mnemonic_passphrase: ''
+
+  - name: alpaca_with_pass
+    mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+    mnemonic_passphrase: 'TREZOR'
+
+tests:
+  - blockchain: { name: nem, network: mainnet }
+    mnemonic: alpaca
+    accounts:
+      - { identifier: 0, public_key: 4AA3AA159A6417C8986282F4D4D217D4F463298D4E672E16BFC2C271EDA1A954 }
+      - { identifier: 1, public_key: 27A0DCF3D52B31790C91180C7596523CC3121A0CF0C39C6D7D3BDAEA3022C755 }
+      - { identifier: 2, public_key: 79679B9C8AE6055A046C032B9291F774D8357C05BB1D2E30859209A00CB6C04D }
+
+      - { identifier: 0, address: NC6D3VXDNNI2OBS7YTNMJ5U4KUQVZBCNJ6WFEHKS }
+      - { identifier: 1, address: NB3YNTZB6ZUAFMYHRLCCPYUOLMW5QCQP3V7UEP2Q }
+      - { identifier: 2, address: NA6ACF2ULFNHGUCVJG36MLS5AA5UYJG4C5BTV5FE }
+
+  - blockchain: { name: symbol, network: mainnet }
+    mnemonic: alpaca
+    accounts:
+      - { identifier: 0, public_key: 9A1004C994F644752F5B98E0E6A4E06DBCCF94CE0D46A00720D1DF3A57B781D9 }
+      - { identifier: 1, public_key: 3899E0E128521E4F419DFB03A13A4E53ED37CC5781045E8BA3417A470A175250 }
+      - { identifier: 2, public_key: 249F48FF17E8F0B2B2CE4E712D7FF362E060502DC2ED13AE5F6657293D047148 }
+
+      - { identifier: 0, address: NADUDN7TCKMKTAGQRS52SFAKL3OQNJOHB64XCVY }
+      - { identifier: 1, address: NBKBNWVQCO44FAAMS7LI2OWSRPGMULPW4HFE3BI }
+      - { identifier: 2, address: NCFB53NBM5IWIGEI3BLM7XRHL74I4MJRQ3H364Q }
+
+  - blockchain: { name: nem, network: mainnet }
+    mnemonic: alpaca_with_pass
+    accounts:
+      - { identifier: 0, public_key: 4348F35A98DF0AC1DC53AB4613DBEF3AC6163446066A9B97DD5720B3C2C7114A }
+      - { identifier: 1, public_key: C658E70A1980E9495D3BCAFD7AEC5EC0417EE073BD207161D90F8FC7514E68BF }
+      - { identifier: 2, public_key: F30C8EC3691A61CA8AAA8BFF1AFB79EFAA383BB85E3A9D2A781AB189B8D8D10D }
+
+      - { identifier: 0, address: NBUHVMBNEUKOA2EPGK55MIDFTESJ56IGJBVS5VLF }
+      - { identifier: 1, address: ND35AOFG4B5D3IHOWMIPBJCOXXXQ3XOPDIWM2X3G }
+      - { identifier: 2, address: NAQN6WKGT7O4YQUKZV6B65QAXVV2HAI6GEDKK5VO }
+
+  - blockchain: { name: symbol, network: mainnet }
+    mnemonic: alpaca_with_pass
+    accounts:
+      - { identifier: 0, public_key: 41A3C970207B23C36FD04120BB49CB9107DD1CD250750A976DFA1DD7B5434D2C }
+      - { identifier: 1, public_key: 00B8400D083EBDF1ED9DA8F8FE77875CD9B818D33144C5EBCF77559679CBBAF1 }
+      - { identifier: 2, public_key: D251F19D22A2B1352F101ED9376F8FA6CA15EFB2F7E49291B618326D0623403D }
+
+      - { identifier: 0, address: NAHMEBT5HH2U5BOXW5G7YCJ5F5UBFZN35SLEX4Y }
+      - { identifier: 1, address: NDBIF3K4P4POVD5CW76RKLPGDMFB2WLYT7E6RIA }
+      - { identifier: 2, address: NA4ZN6DRVAHKYIGEUIDOB6BUVPIU3XHHZ6EGYCQ }
+
+  - blockchain: { name: nem, network: testnet }
+    mnemonic: alpaca
+    accounts:
+      - { identifier: 0, public_key: 5AD4795F35641EE324025ACD27F8BCC843B7155F75532D9ACD76242F89EF2851 }
+      - { identifier: 1, public_key: 6FB0EC57F0113ECF0354F75350131913696ECF70A266322ABC95D22D43D32EA1 }
+      - { identifier: 2, public_key: 079ED4E17B44ACE0A03E38E0BC7FFB19659B80565C0006D720EAD88B62DCFA4A }
+
+      - { identifier: 0, address: TDRDR7ENTLGL2K5KS3YUVNH3LFEZGGEKA3CFT2FW }
+      - { identifier: 1, address: TAY32ZXQH22YPA2VHRMZOUVU6AHOOVYIQO64HXDI }
+      - { identifier: 2, address: TBEUUDN3GL7C6OULCFW24ID7W7FN6C5IX6SOVWGE }
+
+  - blockchain: { name: symbol, network: testnet }
+    mnemonic: alpaca
+    accounts:
+      - { identifier: 0, public_key: 437541F4D29AF2D2F1C2AA568AB16842B06B1820FC654494468D45CBDF5E1B56 }
+      - { identifier: 1, public_key: 9F4659AAF1432B3DB7DA44CA1CC573B0D9EAD53F94A55C62B64BFDADD7A37AF7 }
+      - { identifier: 2, public_key: 43A49C98484454DDFC875D65D5CAF3DFB91E10339A1DFCFFAF63A841DF46BACE }
+
+      - { identifier: 0, address: TDOGDD6B5TUWBRB3P5YYS4WGWY2TLOBEYVRZHDA }
+      - { identifier: 1, address: TBCVKIKTCAYWC2PATU2JA4O67N2BR6Z4ELLFNAA }
+      - { identifier: 2, address: TBTCUT76QTBTLVRPWBURNG62KWCWQW2KUNQDV7I }
