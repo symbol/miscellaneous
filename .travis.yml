@@ -21,3 +21,4 @@ jobs:
     - stage: run scripts
       script:
         - python -m scripts.verify_account_ownership --input scripts/samples/verify_account_ownership.yaml
+        - python -m scripts.two_part_send --input scripts/samples/two_part_send.yaml

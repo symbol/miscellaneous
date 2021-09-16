@@ -1,0 +1,55 @@
+output_directory: '.'
+
+mnemonics:
+  - name: alpaca
+    mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+    mnemonic_passphrase: ''
+
+transfers:
+  - blockchain: { name: nem, network: testnet }
+    deadline: 204292080  # time-sync/network-time
+    filename_pattern: 'nem transfer with message ({})'
+
+    signer_account: { mnemonic: alpaca, identifier: 0, address: TDRDR7ENTLGL2K5KS3YUVNH3LFEZGGEKA3CFT2FW }
+    recipient_address: TAY32ZXQH22YPA2VHRMZOUVU6AHOOVYIQO64HXDI
+
+    sweep_amount: 10000000
+    seed_amount: 200000
+    message: 'test message'
+
+  - blockchain: { name: nem, network: testnet }
+    deadline: 204292080  # time-sync/network-time
+    filename_pattern: 'nem transfer without message ({})'
+
+    signer_account: { mnemonic: alpaca, identifier: 0, address: TDRDR7ENTLGL2K5KS3YUVNH3LFEZGGEKA3CFT2FW }
+    recipient_address: TAY32ZXQH22YPA2VHRMZOUVU6AHOOVYIQO64HXDI
+
+    sweep_amount: 10000000
+    seed_amount: 200000
+
+  - blockchain: { name: symbol, network: testnet }
+    deadline: 15184312738  # node/time
+    fee_multiplier: 100
+    filename_pattern: 'symbol transfer with message ({})'
+
+    signer_account: { mnemonic: alpaca, identifier: 0, address: TDOGDD6B5TUWBRB3P5YYS4WGWY2TLOBEYVRZHDA }
+    recipient_address: TBCVKIKTCAYWC2PATU2JA4O67N2BR6Z4ELLFNAA
+
+    sweep_amount: 5000000
+    seed_amount: 100000
+    message: 'test message'
+
+    mosaic_id: 0x091F837E059AE13C
+
+  - blockchain: { name: symbol, network: testnet }
+    deadline: 15184312738  # node/time
+    fee_multiplier: 100
+    filename_pattern: 'symbol transfer without message ({})'
+
+    signer_account: { mnemonic: alpaca, identifier: 0, address: TDOGDD6B5TUWBRB3P5YYS4WGWY2TLOBEYVRZHDA }
+    recipient_address: TBCVKIKTCAYWC2PATU2JA4O67N2BR6Z4ELLFNAA
+
+    sweep_amount: 5000000
+    seed_amount: 100000
+
+    mosaic_id: 0x091F837E059AE13C

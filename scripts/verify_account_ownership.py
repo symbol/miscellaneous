@@ -29,7 +29,9 @@ def process_group(mnemonic_repository, group_dict):
         else:
             num_failures += 1
 
-        print_conditional_message('E {} {} A {}'.format(expected_address, '==' if is_match else '!=', actual_address), is_match)
+        print_conditional_message(
+            'EXPECTED {} {} ACTUAL {}'.format(expected_address, '==' if is_match else '!=', actual_address),
+            is_match)
 
     return (num_matches, num_failures)
 
