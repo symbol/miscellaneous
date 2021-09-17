@@ -1,0 +1,21 @@
+output_directory: '.'
+
+mnemonics:
+  - name: alpaca_with_multsig_passphrase
+    mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+    mnemonic_passphrase: 'samples :: symbol_multisig'
+
+multisigs:
+  - network: testnet
+    deadline: 15672643800  # node/time
+    fee_multiplier: 100
+    filename: 'symbol multisig create'
+
+    min_approval_delta: 2
+    min_removal_delta: 2
+
+    multisig_account: { mnemonic: alpaca_with_multsig_passphrase, identifier: 0, address: TA3QSN2APXGG5QF4H32G25FB2AWLQZZSPLXZTBI }
+    cosigner_accounts:
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 1, address: TAZG2KHKST3ZCBTYMKMQHRLI72P7WPPGFIVYUOI }
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 2, address: TDKQIDGDRZ263KMC24U2S5YPMDGWCCHAIU7RABI }
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 3, address: TD3KJFO3XZYR7LS2Y2DFK3ABSDFSCAPSESBMCAY }

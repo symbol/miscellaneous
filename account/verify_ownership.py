@@ -3,7 +3,8 @@ import sys
 
 import yaml
 
-from .input_utils import BlockchainDescriptor, MnemonicRepository, create_blockchain_facade, extract_expected_address
+from .utils.facade_utils import BlockchainDescriptor, create_blockchain_facade
+from .utils.MnemonicRepository import MnemonicRepository
 
 
 def print_conditional_message(message, is_success):
@@ -17,7 +18,7 @@ def process_group(mnemonic_repository, group_dict):
     num_matches = 0
     num_failures = 0
     for account_dict in group_dict['accounts']:
-        expected_address = extract_expected_address(account_dict, facade)
+        expected_address = MnemonicRepository.extract_expected_address(facade, account_dict)
 
         identifier = int(account_dict['identifier'])
         child_key_pair = mnemonic_repository.derive_child_key_pair(facade, group_dict['mnemonic'], identifier)
@@ -37,7 +38,7 @@ def process_group(mnemonic_repository, group_dict):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='verifies ownership of a set of accounts')
+    parser = argparse.ArgumentParser(description='verifies account derivations from a BIP32 seed and passphrase')
     parser.add_argument('--input', help='input file with information about accounts to verify', required=True)
     args = parser.parse_args()
 

@@ -2,21 +2,21 @@
 
 ## account
 
-### verify_ownership
+### symbol_multisig_create
 
-_verify account derivations from a BIP32 seed and passphrase_
+_prepares transactions for creating symbol multisig accounts_
 
-Compares BIP32 derivation paths to expected accounts.
+Creates an aggregate transaction containing an embedded multisig account modification transaction signed by all cosigners.
 
-Example: check accounts in `account/samples/verify_ownership.yaml`.
+Example: prepare transactions as described in `account/samples/symbol_multisig_create.yaml`.
 
 ```sh
-python -m account.verify_ownership --input account/samples/verify_ownership.yaml
+python -m account.symbol_multisig_create --input account/samples/symbol_multisig_create.yaml
 ```
 
 ### two_part_send
 
-_prepare transactions for sending tokens from one account to another in two phases_
+_prepares transactions for sending tokens from one account to another in two phases_
 
 Phase One can be used to send a small amount to the destination account to be used as a correctness check.
 Phase Two can be used to send the remainder after Phase One succeeds.
@@ -25,6 +25,18 @@ Example: prepare transactions as described in `account/samples/two_part_send.yam
 
 ```sh
 python -m account.two_part_send --input account/samples/two_part_send.yaml
+```
+
+### verify_ownership
+
+_verifies account derivations from a BIP32 seed and passphrase_
+
+Compares BIP32 derivation paths to expected accounts.
+
+Example: check accounts in `account/samples/verify_ownership.yaml`.
+
+```sh
+python -m account.verify_ownership --input account/samples/verify_ownership.yaml
 ```
 
 ## health

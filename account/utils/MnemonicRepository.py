@@ -2,25 +2,8 @@ from collections import namedtuple
 
 from symbolchain.core.Bip32 import Bip32
 from symbolchain.core.CryptoTypes import PublicKey
-from symbolchain.core.facade.NemFacade import NemFacade
-from symbolchain.core.facade.SymbolFacade import SymbolFacade
 
-BlockchainDescriptor = namedtuple('BlockchainDescriptor', ['name', 'network'])
 MnemonicDescriptor = namedtuple('MnemonicDescriptor', ['phrase', 'passphrase'])
-
-
-def create_blockchain_facade(blockchain_descriptor):
-    return (NemFacade if 'nem' == blockchain_descriptor.name else SymbolFacade)(blockchain_descriptor.network)
-
-
-def extract_expected_address(account_dict, facade):
-    if ('public_key' in account_dict) == ('address' in account_dict):
-        raise KeyError('exactly one of { "public_key", "address" } must be used to specify expected account')
-
-    if 'public_key' in account_dict:
-        return facade.network.public_key_to_address(PublicKey(account_dict['public_key']))
-
-    return facade.Address(account_dict['address'])
 
 
 class MnemonicRepository:
@@ -38,3 +21,26 @@ class MnemonicRepository:
         coin_id = 1 if 'testnet' == facade.network.name else facade.BIP32_COIN_ID
         child_node = bip32_root_node.derive_path([44, coin_id, identifier, 0, 0])
         return facade.bip32_node_to_key_pair(child_node)
+
+    def load_key_pair(self, facade, account_dict):
+        expected_address = self.extract_expected_address(facade, account_dict)
+
+        identifier = int(account_dict['identifier'])
+        child_key_pair = self.derive_child_key_pair(facade, account_dict['mnemonic'], identifier)
+
+        actual_address = facade.network.public_key_to_address(child_key_pair.public_key)
+
+        if expected_address != actual_address:
+            raise Exception('{}: EXPECTED {} ACTUAL {}'.format(identifier, expected_address, actual_address))
+
+        return child_key_pair
+
+    @staticmethod
+    def extract_expected_address(facade, account_dict):
+        if ('public_key' in account_dict) == ('address' in account_dict):
+            raise KeyError('exactly one of { "public_key", "address" } must be used to specify expected account')
+
+        if 'public_key' in account_dict:
+            return facade.network.public_key_to_address(PublicKey(account_dict['public_key']))
+
+        return facade.Address(account_dict['address'])
