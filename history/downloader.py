@@ -6,8 +6,8 @@ from threading import Thread
 
 from zenlog import log
 
-from core.CoinGeckoClient import CoinGeckoClient
-from core.ResourceLoader import create_blockchain_api_client, load_resources
+from client.CoinGeckoClient import CoinGeckoClient
+from client.ResourceLoader import create_blockchain_api_client, load_resources
 
 
 class ChainActivityDownloader:

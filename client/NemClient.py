@@ -2,8 +2,8 @@ from symbolchain.core.CryptoTypes import PublicKey
 from symbolchain.core.nem.Network import Address, Network
 from symbolchain.core.nem.NetworkTimestamp import NetworkTimestamp
 
-from core.pod import TransactionSnapshot
-from core.TimeoutHTTPAdapter import create_http_session
+from .pod import TransactionSnapshot
+from .TimeoutHTTPAdapter import create_http_session
 
 MICROXEM_PER_XEM = 1000000.0
 SUPERNODE_ACCOUNT_PUBLIC_KEY = 'd96366cdd47325e816ff86039a6477ef42772a455023ccddae4a0bd5d27b8d23'
