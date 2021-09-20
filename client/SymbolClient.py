@@ -5,8 +5,8 @@ from symbolchain.core.symbol.Network import Address, Network
 from symbolchain.core.symbol.NetworkTimestamp import NetworkTimestamp
 from zenlog import log
 
-from core.pod import TransactionSnapshot
-from core.TimeoutHTTPAdapter import create_http_session
+from .pod import TransactionSnapshot
+from .TimeoutHTTPAdapter import create_http_session
 
 XYM_MOSAIC_IDS = ['6BED913FA20223F8', 'E74B99BA41F4AFEE']
 MICROXYM_PER_XYM = 1000000.0

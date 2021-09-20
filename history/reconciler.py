@@ -4,7 +4,7 @@ import sys
 
 from zenlog import log
 
-from core.ResourceLoader import create_blockchain_api_client, load_resources
+from client.ResourceLoader import create_blockchain_api_client, load_resources
 
 
 class Reconciler():

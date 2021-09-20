@@ -5,8 +5,8 @@ import yaml
 from symbolchain.core.AccountDescriptorRepository import AccountDescriptorRepository
 from symbolchain.core.NodeDescriptorRepository import NodeDescriptorRepository
 
-from core.NemClient import NemClient
-from core.SymbolClient import SymbolClient
+from .NemClient import NemClient
+from .SymbolClient import SymbolClient
 
 Resources = namedtuple('Resources', [
     'friendly_name', 'ticker_name', 'currency_symbol', 'premarket_price', 'accounts', 'nodes'

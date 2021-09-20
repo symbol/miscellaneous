@@ -3,6 +3,10 @@ language: python
 python:
   - 3.7
 
+env:
+  global:
+    RELEASE_BRANCH=main
+
 cache: pip
 
 install:
@@ -13,12 +17,40 @@ jobs:
   include:
     - stage: lint
       script:
-        - isort --check-only --line-length 140 core health history scripts
-        - pycodestyle --config=.pycodestyle -- core health history scripts
-        - pylint --load-plugins pylint_quotes -- core health history scripts
+        - isort --check-only --line-length 140 account client health history
+        - pycodestyle --config=.pycodestyle -- account client health history
+        - pylint --load-plugins pylint_quotes -- account client health history
 
-  include:
-    - stage: run scripts
+    - stage: run account scripts
       script:
-        - python -m scripts.verify_account_ownership --input scripts/samples/verify_account_ownership.yaml
-        - python -m scripts.two_part_send --input scripts/samples/two_part_send.yaml
+        - python -m account.verify_ownership --input account/samples/verify_ownership.yaml
+        - python -m account.two_part_send --input account/samples/two_part_send.yaml
+
+    - stage: run health scripts
+      script:
+        - python -m health.check_nem_balances --resources templates/nem.mainnet.yaml --groups core
+        - python -m health.check_nem_balances --resources templates/symbol.mainnet.yaml --groups core
+
+    - stage: run history scripts (nem)
+      if: branch = env(RELEASE_BRANCH)
+      script:
+        - python -m history.downloader --input templates/nem.mainnet.yaml --start-date 2021-08-01 --end-date 2021-08-31 --output _histout/raw
+        - mkdir -p _histout/all
+        - python -m history.merger --input _histout/raw --output _histout/all/full.csv --ticker nem
+        - mkdir -p _histout/account
+        - python -m history.grouper --input _histout/all/full.csv --output _histout/account/grouped.csv --mode account
+        - python -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
+        # not: reconciler will fail when there is only a partial download
+        - python -m history.reconciler --input _histout/balances.csv --resources templates/nem.mainnet.yaml --mode spot || test $? -eq 1
+
+    - stage: run history scripts (symbol)
+      if: branch = env(RELEASE_BRANCH)
+      script:
+        - python -m history.downloader --input templates/symbol.mainnet.yaml --start-date 2021-08-01 --end-date 2021-08-31 --output _histout/raw
+        - mkdir -p _histout/all
+        - python -m history.merger --input _histout/raw --output _histout/all/full.csv --ticker symbol
+        - mkdir -p _histout/account
+        - python -m history.grouper --input _histout/all/full.csv --output _histout/account/grouped.csv --mode account
+        - python -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
+        # not: reconciler will fail when there is only a partial download
+        - python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot || test $? -eq 3

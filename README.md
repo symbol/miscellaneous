@@ -1,17 +1,44 @@
 # Miscellany
 
+## account
+
+### verify_ownership
+
+_verify account derivations from a BIP32 seed and passphrase_
+
+Compares BIP32 derivation paths to expected accounts.
+
+Example: check accounts in `account/samples/verify_ownership.yaml`.
+
+```sh
+python -m account.verify_ownership --input account/samples/verify_ownership.yaml
+```
+
+### two_part_send
+
+_prepare transactions for sending tokens from one account to another in two phases_
+
+Phase One can be used to send a small amount to the destination account to be used as a correctness check.
+Phase Two can be used to send the remainder after Phase One succeeds.
+
+Example: prepare transactions as described in `account/samples/two_part_send.yaml`.
+
+```sh
+python -m account.two_part_send --input account/samples/two_part_send.yaml
+```
+
 ## health
 
-### checkNemBalances
+### check_nem_balances
 
 _check balances of multiple accounts in a network_
 
 Prints balance and last harvest information for a set of NEM and/or Symbol accounts.
 
-Example: load accounts and nodes from `templates/symbol.public.yaml` and print all accounts with role `core`.
+Example: load accounts and nodes from `templates/symbol.mainnet.yaml` and print all accounts with role `core`.
 
 ```sh
-python -m health.checkNemBalances --resources templates/symbol.public.yaml --groups core
+python -m health.check_nem_balances --resources templates/symbol.mainnet.yaml --groups core
 ```
 
 ```sh
@@ -36,10 +63,10 @@ _download transactions from nem or symbol networks_
 
 Retrieves balance change events for a set of accounts over a specified date range.
 
-Example: download all June 2021 balance change events for the accounts in `templates/symbol.public.yaml` and save the data in `_histout/raw`.
+Example: download all June 2021 balance change events for the accounts in `templates/symbol.mainnet.yaml` and save the data in `_histout/raw`.
 
 ```sh
-python -m history.downloader --input templates/symbol.public.yaml --start-date 2021-06-01 --end-date 2021-06-30 --output _histout/raw
+python -m history.downloader --input templates/symbol.mainnet.yaml --start-date 2021-06-01 --end-date 2021-06-30 --output _histout/raw
 ```
 
 ### merger
@@ -93,10 +120,10 @@ _reconciles an account balance table with a network_
 
 Compares the account balances in an account balance table with live network balances.
 
-Example: Compare the balances in `_histout/balances.csv` with the `spot` network balances reported by the network described in `templates/symbol.public.yaml`.
+Example: Compare the balances in `_histout/balances.csv` with the `spot` network balances reported by the network described in `templates/symbol.mainnet.yaml`.
 
 ```sh
-python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.public.yaml --mode spot
+python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot
 ```
 
 > :warning: This will only succeed when _all_ balances have been downloaded.
