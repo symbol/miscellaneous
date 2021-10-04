@@ -14,13 +14,14 @@ RECEIPT_TYPES = {
     'harvest': 0x2143,
     'inflation': 0x5143,
     'hashlock_expired': 0x2348,
+    'secretlock_expired': 0x2352,
     'mosaic_expiry': 0x414D,
     'namespace_expiry': 0x414E
 }
 TRANSACTION_TYPES = {
     'transfer': 0x4154,
     'aggregate_complete': 0x4141,
-    'aggregate_bonded': 0x4142
+    'aggregate_bonded': 0x4241
 }
 
 
@@ -73,7 +74,7 @@ class SymbolClient:
 
             for json_receipt in json_statement['receipts']:
                 receipt_type = json_receipt['type']
-                if any(RECEIPT_TYPES[name] == receipt_type for name in ['harvest', 'hashlock_expired']):
+                if any(RECEIPT_TYPES[name] == receipt_type for name in ['harvest', 'hashlock_expired', 'secretlock_expired']):
                     if Address(address) == Address(unhexlify(json_receipt['targetAddress'])):
                         snapshot.amount += int(json_receipt['amount'])
                 elif receipt_type not in RECEIPT_TYPES.values():
