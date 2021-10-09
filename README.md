@@ -39,6 +39,61 @@ Example: check accounts in `account/samples/verify_ownership.yaml`.
 python -m account.verify_ownership --input account/samples/verify_ownership.yaml
 ```
 
+## block
+
+### extract
+
+_extracts data from block files for further post-processing_
+
+The extractor is the first step in processing raw block data using the block-level scripts, either to drive visualizations or chain analysis.
+
+There are four primary output types:
+
+- blocks
+- block headers
+- statements
+- chain state
+
+Example: extract data from node files stored in `block/data/` and write files to `block/output`
+
+```sh
+python extract.py --block_dir data --output_dir output
+```
+
+### delegates/find_delegates
+
+_finds current delegates associated with one or more nodes using serialized state data_
+
+This script requires a JSON containing accounts similar to what is receieved from the /node/info API endpoint.
+
+As long as node URLs/names are available it will attempt to get missing information from the nodes.
+
+Example: find all delegates from nodes listed in `delegates/node_accounts.json` using chain state from `output/state_map.msgpack` 
+
+```sh
+python delegates/find_delegates.py --nodes_path delegates/node_accounts.json --state_path output/state_map.msgpack
+```
+
+### harvester/get_harvester_stats
+
+_aggregate harvesting statistics using serialized state data_
+
+This script requires a JSON containing harvester addresses; see example in `harvester/accounts.json`.
+
+Stats are aggregated for the full chain history and binned based on provided frequencies.
+
+The output falls into three categories:
+
+- blocks harvested
+- fees collected
+- total XYM balance
+
+Example: get stats for harvesters listed in `harvester/accounts.json` using chain state from `output/state_map.msgpack` and `output/block_header_df.pkl` 
+
+```sh
+python harvester/get_harvester_stats.py --state_path output/state_map.msgpack --headers_path output/block_header_df.pkl --output_path harvester/output
+```
+
 ## health
 
 ### check_nem_balances
