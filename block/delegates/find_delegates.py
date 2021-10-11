@@ -1,33 +1,33 @@
+#!/usr/bin/env python3
 """Symbol Delegate Identification Script"""
 
 import argparse
 import json
-import pathlib
-import os
-from delegates import *
+from block.extractor import XYMStateMap
+from block.delegates.delegates import find_delegates
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--nodes_path", type=str, default='node_accounts.json', help="path to load node information from")
-    parser.add_argument("--out_path", type=str, default='node_delegates.json', help="path to load node information from")
-    parser.add_argument("--state_path", type=str, default='state_map.msgpack', help="path to load state map from")
-    
+    parser.add_argument('--input', type=str, default='resources/accounts.json', help='path to load node information from')
+    parser.add_argument('--output', type=str, default='delegates/output/node_delegates.json', help='path to write delegates json')
+    parser.add_argument('--state_path', type=str, default='resources/state_map.msgpack', help='path to load state map from')
+
     args = parser.parse_args()
 
-    print(f"Reading state from {args.state_path}")
-    state_map = get_state_map(args.state_path)
+    print(f'Reading state from {args.state_path}')
+    state_map = XYMStateMap.read_msgpack(args.state_path)
 
-    print(f"Reading nodes from {args.nodes_path}")
-    with open(args.nodes_path,'r') as f:
+    print(f'Reading nodes from {args.input}')
+    with open(args.input, 'r') as f:
         accounts = json.loads(f.read())['accounts']
 
-    print("Identifying delegates . . .")
-    delegate_accounts = find_delegates(accounts,state_map)
-    
-    print(f"All accounts processed, writing output to {args.out_path}")
-    with open(args.out_path,'w') as f:
-        f.write(json.dumps(delegate_accounts,indent=4))
+    print('Identifying delegates . . .')
+    delegate_accounts = find_delegates(accounts, state_map)
 
-    print("Delegate analysis complete!")
+    print(f'All accounts processed, writing output to {args.output}')
+    with open(args.output, 'w') as f:
+        f.write(json.dumps(delegate_accounts, indent=4))
+
+    print('Delegate analysis complete!')

@@ -41,57 +41,59 @@ python -m account.verify_ownership --input account/samples/verify_ownership.yaml
 
 ## block
 
+Running block extraction scripts requires the installaton of the local **block** package. This can be accomplished as follows:
+```sh
+pip install -e setup.py
+```
+
 ### extract
 
-_extracts data from block files for further post-processing_
+_extracts chain data from node files and produces a variety of useful output_
 
 The extractor is the first step in processing raw block data using the block-level scripts, either to drive visualizations or chain analysis.
-
 There are four primary output types:
-
 - blocks
 - block headers
 - statements
 - chain state
 
-Example: extract data from node files stored in `block/data/` and write files to `block/output`
+Example: extract data from node files stored in `block/data`
+Default output dir is `block/resources`
 
 ```sh
-python extract.py --block_dir data --output_dir output
+python extractor/extract.py --input data --output resources
 ```
 
 ### delegates/find_delegates
 
 _finds current delegates associated with one or more nodes using serialized state data_
 
-This script requires a JSON containing accounts similar to what is receieved from the /node/info API endpoint.
-
+This script requires a JSON containing accounts similar to what is receieved from the /node/info API endpoint; see example in `resources/accounts.json`.
 As long as node URLs/names are available it will attempt to get missing information from the nodes.
 
-Example: find all delegates from nodes listed in `delegates/node_accounts.json` using chain state from `output/state_map.msgpack` 
+Example: find all delegates from nodes listed in `resources/accounts.json` using chain state from `resources/state_map.msgpack`.
+Default output dir is `block/delegates/output`.
 
 ```sh
-python delegates/find_delegates.py --nodes_path delegates/node_accounts.json --state_path output/state_map.msgpack
+python delegates/find_delegates.py --input resources/accounts.json --state_path resources/state_map.msgpack
 ```
 
 ### harvester/get_harvester_stats
 
 _aggregate harvesting statistics using serialized state data_
 
-This script requires a JSON containing harvester addresses; see example in `harvester/accounts.json`.
-
+This script requires a JSON containing harvester addresses; see example in `resources/accounts.json`.
 Stats are aggregated for the full chain history and binned based on provided frequencies.
-
 The output falls into three categories:
-
 - blocks harvested
 - fees collected
 - total XYM balance
 
-Example: get stats for harvesters listed in `harvester/accounts.json` using chain state from `output/state_map.msgpack` and `output/block_header_df.pkl` 
+Example: get stats for harvesters listed in `resources/accounts.json` using chain state from `resources/state_map.msgpack` and `resources/block_header_df.pkl`
+Default output dir is `block/harvester/output`
 
 ```sh
-python harvester/get_harvester_stats.py --state_path output/state_map.msgpack --headers_path output/block_header_df.pkl --output_path harvester/output
+python harvester/get_harvester_stats.py --input resources/accounts.json --state_path resources/state_map.msgpack --headers_path resources/block_header_df.pkl
 ```
 
 ## health

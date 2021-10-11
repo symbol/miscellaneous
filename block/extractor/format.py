@@ -1,4 +1,4 @@
-"""Symbol Block Structure for Unpacking"""
+"""Fixed Symbol Block Structure for Unpacking"""
 
 HEADER_FORMAT = {
     'size': 'I',
@@ -47,7 +47,7 @@ TX_H_FORMAT = {
     'network': 'B',
     'type': '2s',
     'max_fee': 'Q',
-    'deadline': 'Q',}
+    'deadline': 'Q'}
 
 TX_H_LEN = 128
 
@@ -58,7 +58,7 @@ EMBED_TX_H_FORMAT = {
     'reserved_2': 'I',
     'version': 'B',
     'network': 'B',
-    'type': '2s',}
+    'type': '2s'}
 
 EMBED_TX_H_LEN = 48
 
@@ -95,14 +95,14 @@ RECEIPT_LEN = 8
 ADDRESS_RESOLUTION_FORMAT = {
     'primary_id': 'I',
     'secondary_id': 'I',
-    'resolved': '24s' }
+    'resolved': '24s'}
 
 ADDRESS_RESOLUTION_LEN = 32
 
 MOSAIC_RESOLUTION_FORMAT = {
     'primary_id': 'I',
     'secondary_id': 'I',
-    'resolved': 'Q' }
+    'resolved': 'Q'}
 
 MOSAIC_RESOLUTION_LEN = 16
 
@@ -132,4 +132,3 @@ TX_NAME_MAP = {
     b'4151': 'Mosaic Global Restriction',
     b'4251': 'Mosaic Address Restriction',
     b'4154': 'Transfer'}
-

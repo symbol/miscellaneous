@@ -55,3 +55,26 @@ jobs:
         - python -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
         # not: reconciler will fail when there is only a partial download
         - python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot || test $? -eq 3
+
+    - stage: block lint
+      script:
+        - isort --check-only --line-length 140 account client health history
+        - pycodestyle --config=.pycodestyle -- account client health history
+        - pylint --load-plugins pylint_quotes -- account client health history
+    
+    - stage: run block extraction scripts (symbol)
+      if: branch = env(RELEASE_BRANCH)
+      script:
+        - python -m block.extractor.extract --input block/data --output block/resources
+
+    - stage: run harvester analysis scripts (symbol)
+      if: branch = env(RELEASE_BRANCH)
+      script:
+        # note: will fail if extractor output is absent
+        - python -m block.harvester.get_harvester_stats --input block/resources/accounts.json --state_path block/resources/state_map.msgpack --headers_path block/resources/block_header_df.pkl --output block/harvester/output
+
+    - stage: run delegate analysis scripts (symbol)
+      if: branch = env(RELEASE_BRANCH)
+      script:
+        # note: will fail if extractor output is absent
+        - python -m block.delegates.find_delegates --input block/resources/accounts.json --state_path block/resources/state_map.msgpack --output block/delegates/output/delegates.json
