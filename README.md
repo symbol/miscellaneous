@@ -139,3 +139,17 @@ python -m history.reconciler --input _histout/balances.csv --resources templates
 ```
 
 > :warning: This will only succeed when _all_ balances have been downloaded.
+
+## network
+
+### richlist_symbol
+
+_downloads high balance account information for a Symbol network_
+
+Downloads information about all accounts owning a specified mosaic with a balance above a threshold.
+
+Example: Retrieve all accounts with balances greater than 50M from the network described in `templates/symbol.mainnet.yaml` and save the results to `50M.csv`.
+
+```sh
+python -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv
+````

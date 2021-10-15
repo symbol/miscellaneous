@@ -41,7 +41,7 @@ class NemClient:
         json_meta = json_response['meta']
 
         account_info = AccountInfo()
-        account_info.address = address
+        account_info.address = Address(json_account['address'])
         account_info.vested_balance = json_account['vestedBalance'] / MICROXEM_PER_XEM
         account_info.balance = json_account['balance'] / MICROXEM_PER_XEM
         account_info.public_key = json_account['publicKey']

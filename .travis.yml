@@ -17,9 +17,9 @@ jobs:
   include:
     - stage: lint
       script:
-        - isort --check-only --line-length 140 account client health history
-        - pycodestyle --config=.pycodestyle -- account client health history
-        - pylint --load-plugins pylint_quotes -- account client health history
+        - isort --check-only --line-length 140 account client health history network
+        - pycodestyle --config=.pycodestyle -- account client health history network
+        - pylint --load-plugins pylint_quotes -- account client health history network
 
     - stage: run account scripts
       script:
@@ -55,3 +55,7 @@ jobs:
         - python -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
         # not: reconciler will fail when there is only a partial download
         - python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot || test $? -eq 3
+
+    - stage: run network scripts
+      script:
+        - python -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv

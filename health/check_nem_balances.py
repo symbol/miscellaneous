@@ -121,10 +121,10 @@ class NetworkPrinter:
 
     def _get_account_display_name(self, address):
         if not self.use_friendly_names:
-            return address
+            return str(address)
 
         account_descriptor = self.resources.accounts.find_by_address(address)
-        return account_descriptor.name if account_descriptor else address
+        return account_descriptor.name if account_descriptor else str(address)
 
     def _get_formatted_last_harvest_height(self, address):
         harvest_snapshots = self.api_client.get_harvests(address)

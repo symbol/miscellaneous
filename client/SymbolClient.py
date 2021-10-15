@@ -8,7 +8,11 @@ from zenlog import log
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
 
-XYM_MOSAIC_IDS = ['6BED913FA20223F8', 'E74B99BA41F4AFEE']
+XYM_NETWORK_MOSAIC_IDS_MAP = {
+    0x68: '6BED913FA20223F8',
+    0x98: 'E74B99BA41F4AFEE'
+}
+
 MICROXYM_PER_XYM = 1000000.0
 RECEIPT_TYPES = {
     'harvest': 0x2143,
@@ -33,6 +37,7 @@ class AccountInfo:
         self.importance = 0.0
 
         self.remote_status = None
+        self.voting_epoch_ranges = []
 
 
 class SymbolClient:
@@ -44,14 +49,33 @@ class SymbolClient:
         json_response = self._get_json('chain/info')
         return int(json_response['height'])
 
+    def get_finalization_epoch(self):
+        json_response = self._get_json('chain/info')
+        return int(json_response['latestFinalizedBlock']['finalizationEpoch'])
+
     def get_account_info(self, address):
         json_response = self._get_json('accounts/{}'.format(address))
+        return self._parse_account_info(json_response['account'])
 
-        json_account = json_response['account']
+    def get_richlist_account_infos(self, page_number, page_size, mosaic_id):
+        url_pattern = 'accounts?pageNumber={}&pageSize={}&order=desc&orderBy=balance&mosaicId={}'
+        json_response = self._get_json(url_pattern.format(page_number, page_size, mosaic_id))
 
+        account_infos = []
+        for json_account_container in json_response['data']:
+            account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
+
+        return account_infos
+
+    @staticmethod
+    def _parse_account_info(json_account, mosaic_id=None):
         account_info = AccountInfo()
-        account_info.address = address
-        xym_mosaic = next((mosaic for mosaic in json_account['mosaics'] if mosaic['id'] in XYM_MOSAIC_IDS), None)
+        account_info.address = Address(unhexlify(json_account['address']))
+
+        if not mosaic_id:
+            mosaic_id = XYM_NETWORK_MOSAIC_IDS_MAP[account_info.address.bytes[0]]
+
+        xym_mosaic = next((mosaic for mosaic in json_account['mosaics'] if mosaic['id'] == mosaic_id), None)
         if xym_mosaic:
             account_info.balance = int(xym_mosaic['amount']) / MICROXYM_PER_XYM
 
@@ -59,6 +83,12 @@ class SymbolClient:
         account_info.importance = float(json_account['importance']) / (9 * 10 ** 15 - 1)
 
         account_info.remote_status = ['Unlinked', 'Main', 'Remote', 'Remote_Unlinked'][json_account['accountType']]
+
+        json_supplemental_public_keys = json_account['supplementalPublicKeys']
+        if 'voting' in json_supplemental_public_keys:
+            for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']:
+                account_info.voting_epoch_ranges.append((json_voting_public_key['startEpoch'], json_voting_public_key['endEpoch']))
+
         return account_info
 
     def get_harvests(self, address, start_id=None):
@@ -146,7 +176,7 @@ class SymbolClient:
                 direction = 1
 
             for json_mosaic in json_transaction['mosaics']:
-                if json_mosaic['id'] in XYM_MOSAIC_IDS:
+                if json_mosaic['id'] == XYM_NETWORK_MOSAIC_IDS_MAP[Address(address).bytes[0]]:
                     amount_microxym += int(json_mosaic['amount']) * direction
 
         return amount_microxym
