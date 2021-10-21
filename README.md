@@ -142,6 +142,18 @@ python -m history.reconciler --input _histout/balances.csv --resources templates
 
 ## network
 
+### harvester_nem
+
+_downloads harvester account information for a NEM network_
+
+Downloads information about all accounts that recently harvested a block.
+
+Example: Retrieve all accounts that have harvested a block in the last \~15 minutes (1% of a day) from the network described in `templates/nem.mainnet.yaml` and save the results to `harvesters.csv`.
+
+```sh
+python -m network.harvester_nem --resources templates/nem.mainnet.yaml --days 0.01 --output harvesters.csv
+```
+
 ### richlist_symbol
 
 _downloads high balance account information for a Symbol network_
