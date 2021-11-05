@@ -4,6 +4,7 @@ import csv
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client, load_resources
+from client.TimeoutHTTPAdapter import create_http_session
 
 MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
 
@@ -13,8 +14,11 @@ class RichListDownloader:
         self.api_client = create_blockchain_api_client(resources)
         self.min_balance = min_balance
         self.mosaic_id = mosaic_id
+        self.node_public_key_to_version_map = {}
 
     def download(self, output_filepath):
+        self._download_nodes()
+
         log.info('downloading rich list activity to {} for accounts with {} balances at least {}'.format(
             output_filepath,
             self.mosaic_id,
@@ -23,7 +27,7 @@ class RichListDownloader:
 
         page_number = 1
         with open(output_filepath, 'w') as outfile:
-            column_names = ['address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch']
+            column_names = ['address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch', 'version']
             csv_writer = csv.DictWriter(outfile, column_names, extrasaction='ignore')
             csv_writer.writeheader()
 
@@ -34,6 +38,23 @@ class RichListDownloader:
                     return
 
                 page_number += 1
+
+    def _download_nodes(self):
+        log.info('downloading node information and building node public key to version map')
+
+        session = create_http_session()
+        json_nodes = session.get(
+            'http://ec2-34-222-209-211.us-west-2.compute.amazonaws.com:4001/nodes',
+            headers={'Content-type': 'application/json'}).json()
+
+        for json_node in json_nodes:
+            version = json_node['version']
+            formatted_version = '{}.{}.{}.{}'.format(
+                (version >> 24) & 0xFF,
+                (version >> 16) & 0xFF,
+                (version >> 8) & 0xFF,
+                version & 0xFF)
+            self.node_public_key_to_version_map[json_node['publicKey']] = formatted_version
 
     def _get_finalization_epoch(self):
         finalization_epoch = self.api_client.get_finalization_epoch()
@@ -62,7 +83,8 @@ class RichListDownloader:
                 'balance': account_info.balance,
                 'is_voting': is_voting,
                 'has_ever_voted': any(voting_epoch_ranges),
-                'voting_end_epoch': max_voting_end_epoch
+                'voting_end_epoch': max_voting_end_epoch,
+                'version': self.node_public_key_to_version_map.get(account_info.public_key, '0.0.0.0')
             })
 
         return True
