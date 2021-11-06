@@ -154,6 +154,18 @@ Example: Retrieve all accounts that have harvested a block in the last \~15 minu
 python -m network.harvester_nem --resources templates/nem.mainnet.yaml --days 0.01 --output harvesters.csv
 ```
 
+### nodes
+
+_downloads node information from a network_
+
+Crawls the entire network, connecting to each node individually in order to pull node information.
+
+Example: Discover all nodes connected to the network described in `templates/nem.mainnet.yaml` with a one second peer timeout and save the results to `nemnodes.json`.
+
+```sh
+python -m network.nodes --resources templates/nem.mainnet.yaml --timeout 1 --output nemnodes.json
+```
+
 ### richlist_symbol
 
 _downloads high balance account information for a Symbol network_

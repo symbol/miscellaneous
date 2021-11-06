@@ -1,6 +1,11 @@
+import socket
+import ssl
 from binascii import unhexlify
+from pathlib import Path
 
-from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.core.BufferReader import BufferReader
+from symbolchain.core.BufferWriter import BufferWriter
+from symbolchain.core.CryptoTypes import Hash256, PublicKey
 from symbolchain.core.symbol.Network import Address, Network
 from symbolchain.core.symbol.NetworkTimestamp import NetworkTimestamp
 from zenlog import log
@@ -40,10 +45,80 @@ class AccountInfo:
         self.voting_epoch_ranges = []
 
 
+class SymbolPeerClient:
+    def __init__(self, host, port=7890, **kwargs):
+        (self.node_host, self.node_port) = (host, port)
+        self.certificate_directory = Path(kwargs.get('certificate_directory'))
+        self.timeout = kwargs.get('timeout', 10)
+
+        self.ssl_context = ssl.create_default_context()
+        self.ssl_context.check_hostname = False
+        self.ssl_context.verify_mode = ssl.CERT_NONE
+        self.ssl_context.load_cert_chain(
+            self.certificate_directory / 'node.full.crt.pem',
+            keyfile=self.certificate_directory / 'node.key.pem')
+
+    def get_node_info(self):
+        try:
+            with socket.create_connection((self.node_host, self.node_port), self.timeout) as sock:
+                with self.ssl_context.wrap_socket(sock) as ssock:
+                    self.send_node_info_request(ssock)
+                    return self.read_node_info_response(ssock)
+        except socket.timeout as ex:
+            raise ConnectionRefusedError from ex
+
+    @staticmethod
+    def send_node_info_request(ssock):
+        writer = BufferWriter()
+        writer.write_int(8, 4)
+        writer.write_int(0x111, 4)
+        ssock.send(writer.buffer)
+
+    @staticmethod
+    def read_node_info_response(ssock):
+        read_buffer = ssock.read()
+        size = BufferReader(read_buffer).read_int(4)
+
+        while len(read_buffer) < size:
+            read_buffer = b''.join([read_buffer, ssock.read()])
+
+        node_info = {}
+
+        reader = BufferReader(read_buffer)
+        reader.read_int(8)  # packet header
+        reader.read_int(4)  # size
+
+        node_info['version'] = reader.read_int(4)
+        node_info['publicKey'] = str(PublicKey(reader.read_bytes(32)))
+        node_info['networkGenerationHashSeed'] = str(Hash256(reader.read_bytes(32)))
+        node_info['roles'] = reader.read_int(4)
+        node_info['port'] = reader.read_int(2)
+        node_info['networkIdentifier'] = reader.read_int(1)
+
+        host_size = reader.read_int(1)
+        name_size = reader.read_int(1)
+        node_info['host'] = reader.read_bytes(host_size).decode('utf-8')
+        node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf-8')
+
+        return node_info
+
+    @staticmethod
+    def get_peers():
+        # not implemented
+        return []
+
+
 class SymbolClient:
-    def __init__(self, host):
-        self.session = create_http_session()
-        self.node_host = host
+    def __init__(self, host, port=3000, **kwargs):
+        self.session = create_http_session(**kwargs)
+        (self.node_host, self.node_port) = (host, port)
+
+    @staticmethod
+    def from_node_info_dict(dict_node_info, **kwargs):
+        if not dict_node_info['roles'] & 2:
+            return SymbolPeerClient(dict_node_info['host'], dict_node_info['port'], **kwargs)
+
+        return SymbolClient(dict_node_info['host'], **kwargs)
 
     def get_chain_height(self):
         json_response = self._get_json('chain/info')
@@ -52,6 +127,14 @@ class SymbolClient:
     def get_finalization_epoch(self):
         json_response = self._get_json('chain/info')
         return int(json_response['latestFinalizedBlock']['finalizationEpoch'])
+
+    def get_node_info(self):
+        json_response = self._get_json('node/info')
+        return json_response
+
+    def get_peers(self):
+        json_response = self._get_json('node/peers')
+        return json_response
 
     def get_account_info(self, address):
         json_response = self._get_json('accounts/{}'.format(address))
@@ -203,4 +286,4 @@ class SymbolClient:
 
     def _get_json(self, rest_path):
         json_http_headers = {'Content-type': 'application/json'}
-        return self.session.get('http://{}:3000/{}'.format(self.node_host, rest_path), headers=json_http_headers).json()
+        return self.session.get('http://{}:{}/{}'.format(self.node_host, self.node_port, rest_path), headers=json_http_headers).json()
