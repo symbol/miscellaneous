@@ -53,8 +53,12 @@ class RichListDownloader:
 
         with open(self.nodes_input_filepath, 'r') as infile:
             for json_node in json.load(infile):
+                node_port = json_node['port']
+                if json_node['roles'] & 2:
+                    node_port = 3000  # use REST (default) port
+
                 self.public_key_to_descriptor_map[json_node['publicKey']] = NodeDescriptor(
-                    json_node['host'],
+                    'http://{}:{}'.format(json_node['host'], node_port) if json_node['host'] else '',
                     json_node['friendlyName'],
                     self._format_version(json_node['version']))
 
