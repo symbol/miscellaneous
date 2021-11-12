@@ -57,7 +57,8 @@ jobs:
     - stage: run network scripts
       script:
         - python -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv
-        - python -m network.harvester_nem --resources templates/nem.mainnet.yaml --days 0.01 --output harvesters.csv
+        - python -m network.harvester --resources templates/nem.mainnet.yaml --days 0.01 --output nem_harvesters.csv
+        - python -m network.harvester --resources templates/symbol.mainnet.yaml --days 0.01 --output symbol_harvesters.csv
 
     - stage: run network scripts (crawl)
       script:

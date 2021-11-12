@@ -42,6 +42,7 @@ class AccountInfo:
         self.importance = 0.0
 
         self.remote_status = None
+        self.linked_public_key = None
         self.voting_epoch_ranges = []
 
 
@@ -128,6 +129,10 @@ class SymbolClient:
         json_response = self._get_json('chain/info')
         return int(json_response['latestFinalizedBlock']['finalizationEpoch'])
 
+    def get_harvester_signer_public_key(self, height):
+        json_response = self._get_json('blocks/{}'.format(height))
+        return json_response['block']['signerPublicKey']
+
     def get_node_info(self):
         json_response = self._get_json('node/info')
         return json_response
@@ -168,6 +173,9 @@ class SymbolClient:
         account_info.remote_status = ['Unlinked', 'Main', 'Remote', 'Remote_Unlinked'][json_account['accountType']]
 
         json_supplemental_public_keys = json_account['supplementalPublicKeys']
+        if 'linked' in json_supplemental_public_keys:
+            account_info.linked_public_key = json_supplemental_public_keys['linked']['publicKey']
+
         if 'voting' in json_supplemental_public_keys:
             for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']:
                 account_info.voting_epoch_ranges.append((json_voting_public_key['startEpoch'], json_voting_public_key['endEpoch']))

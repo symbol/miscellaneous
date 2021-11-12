@@ -1,24 +1,22 @@
 import argparse
 import csv
-import json
-from collections import namedtuple
 
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client, load_resources
 
+from .PeersMapBuilder import NodeDescriptor, PeersMapBuilder
+
 MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
-
-
-NodeDescriptor = namedtuple('NodeDescriptor', ['host', 'name', 'version'])
 
 
 class RichListDownloader:
     def __init__(self, resources, min_balance, mosaic_id, nodes_input_filepath):
-        self.api_client = create_blockchain_api_client(resources)
+        self.resources = resources
         self.min_balance = min_balance
         self.mosaic_id = mosaic_id
         self.nodes_input_filepath = nodes_input_filepath
+        self.api_client = create_blockchain_api_client(self.resources)
 
         self.public_key_to_descriptor_map = {}
 
@@ -49,24 +47,11 @@ class RichListDownloader:
         if not self.nodes_input_filepath:
             return
 
-        log.info('processing node information from {}'.format(self.nodes_input_filepath))
-
-        with open(self.nodes_input_filepath, 'r') as infile:
-            for json_node in json.load(infile):
-                node_port = json_node['port']
-                if json_node['roles'] & 2:
-                    node_port = 3000  # use REST (default) port
-
-                self.public_key_to_descriptor_map[json_node['publicKey']] = NodeDescriptor(
-                    'http://{}:{}'.format(json_node['host'], node_port) if json_node['host'] else '',
-                    json_node['friendlyName'],
-                    self._format_version(json_node['version']))
+        builder = PeersMapBuilder(self.resources, self.nodes_input_filepath)
+        builder.build()
+        self.public_key_to_descriptor_map = builder.peers_map
 
         log.info('found {} mappings'.format(len(self.public_key_to_descriptor_map)))
-
-    @staticmethod
-    def _format_version(version):
-        return '{}.{}.{}.{}'.format((version >> 24) & 0xFF, (version >> 16) & 0xFF, (version >> 8) & 0xFF, version & 0xFF)
 
     def _get_finalization_epoch(self):
         finalization_epoch = self.api_client.get_finalization_epoch()

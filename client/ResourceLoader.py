@@ -3,6 +3,8 @@ from collections import namedtuple
 
 import yaml
 from symbolchain.core.AccountDescriptorRepository import AccountDescriptorRepository
+from symbolchain.core.facade.NemFacade import NemFacade
+from symbolchain.core.facade.SymbolFacade import SymbolFacade
 from symbolchain.core.NodeDescriptorRepository import NodeDescriptorRepository
 
 from .NemClient import NemClient
@@ -35,3 +37,7 @@ def locate_blockchain_client_class(resources):
 def create_blockchain_api_client(resources, node_role=None, **kwargs):
     node_host = random.choice(resources.nodes.find_all_by_role(node_role)).host
     return locate_blockchain_client_class(resources)(node_host, **kwargs)
+
+
+def create_blockchain_facade(resources):
+    return (NemFacade if 'nem' == resources.friendly_name else SymbolFacade)(resources.network)

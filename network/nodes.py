@@ -70,10 +70,13 @@ class NodeDownloader:
                 if 'nem' == self.resources.friendly_name:
                     network = NetworkLocator.find_by_identifier(NemNetwork.NETWORKS, json_node['metaData']['networkId'])
                     node_address = network.public_key_to_address(PublicKey(json_node['identity']['public-key']))
-                    main_public_key = api_client.get_account_info(node_address, forwarded=True).public_key
+                    main_account_info = api_client.get_account_info(node_address, forwarded=True)
 
-                    json_node['identity']['node-public-key'] = json_node['identity']['public-key']
-                    json_node['identity']['public-key'] = main_public_key
+                    if 'ACTIVE' == main_account_info.remote_status:
+                        json_node['identity']['node-public-key'] = json_node['identity']['public-key']
+                        json_node['identity']['public-key'] = main_account_info.public_key
+
+                    main_public_key = json_node['identity']['public-key']
                 else:
                     main_public_key = json_node['publicKey']
 
