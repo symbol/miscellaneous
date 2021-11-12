@@ -10,8 +10,7 @@ accounts:
   - { address: NAL4XHZU6MANNNFQI4Z2WNMU3KRI2YW2MRRMHLI, name: Core3, roles: [core] }
 
 nodes:
-  - host: ngl-dual-001.symbolblockchain.io
-  - host: ngl-dual-002.symbolblockchain.io
-  - host: ngl-dual-003.symbolblockchain.io
-  - host: ngl-dual-004.symbolblockchain.io
-  - host: ngl-dual-005.symbolblockchain.io
+  - host: wolf.importance.jp
+  - host: 00fabf14.xym.stir-hosyu.com
+  - host: symbol.shizuilab.com
+  - host: symbol.ooo

@@ -17,9 +17,7 @@ jobs:
   include:
     - stage: lint
       script:
-        - isort --check-only --line-length 140 account client health history network
-        - pycodestyle --config=.pycodestyle -- account client health history network
-        - pylint --load-plugins pylint_quotes -- account client health history network
+        - sh ./lint.sh
 
     - stage: run account scripts
       script:
