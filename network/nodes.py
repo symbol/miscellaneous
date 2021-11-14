@@ -83,11 +83,12 @@ class NodeDownloader:
                 is_reachable = True
 
                 json_peers = api_client.get_peers()
-            except (RequestException, TimeoutError, ConnectionRefusedError):
-                log.warning('failed to load peers from {}:{} (reachable node? {})'.format(
+            except (RequestException, TimeoutError, ConnectionRefusedError) as ex:
+                log.warning('failed to load peers from {}:{} (reachable node? {})\n{}'.format(
                     api_client.node_host,
                     api_client.node_port,
-                    is_reachable))
+                    is_reachable,
+                    ex))
                 json_peers = []
 
             with self.lock:

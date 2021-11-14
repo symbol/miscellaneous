@@ -75,9 +75,12 @@ class SymbolPeerClient:
         writer.write_int(0x111, 4)
         ssock.send(writer.buffer)
 
-    @staticmethod
-    def read_node_info_response(ssock):
+    def read_node_info_response(self, ssock):
         read_buffer = ssock.read()
+
+        if 0 == len(read_buffer):
+            raise ConnectionRefusedError('socket returned empty data for {}'.format(self.node_host))
+
         size = BufferReader(read_buffer).read_int(4)
 
         while len(read_buffer) < size:

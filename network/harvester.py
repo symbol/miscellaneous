@@ -7,7 +7,7 @@ from threading import Lock, Thread
 from symbolchain.core.CryptoTypes import PublicKey
 from zenlog import log
 
-from client.ResourceLoader import create_blockchain_api_client, create_blockchain_facade, load_resources, locate_blockchain_client_class
+from client.ResourceLoader import create_blockchain_facade, load_resources, locate_blockchain_client_class
 
 from .PeersMapBuilder import NodeDescriptor, PeersMapBuilder
 
@@ -24,23 +24,31 @@ class HarvesterDescriptor:
 class BatchDownloader:
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, resources, thread_count, height_range):
+    def __init__(self, resources, thread_count):
         self.resources = resources
         self.thread_count = thread_count
-        self.min_height = height_range[0]
-        self.max_height = height_range[1]
-        self.next_height = self.min_height
+        self.nodes = self.resources.nodes.find_all_not_by_role('seed-only')
+
+        self.max_height = 0
+        self.next_height = 0
 
         self.facade = create_blockchain_facade(self.resources)
         self.api_clients = []
         self.public_key_to_descriptor_map = {}
         self.lock = Lock()
 
-    def download_all(self):
-        for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only'):
+    def download_all(self, num_blocks):
+        for node_descriptor in self.nodes:
             self.api_clients.append(locate_blockchain_client_class(self.resources)(node_descriptor.host, timeout=60, retry_post=True))
 
-        log.info('starting {} harvester download threads [{}, {}]'.format(self.thread_count, self.min_height, self.max_height))
+        chain_height = random.choice(self.api_clients).get_chain_height()
+
+        log.info('chain height is {}'.format(chain_height))
+        min_height = max(1, chain_height - num_blocks + 1)
+        self.max_height = chain_height
+        self.next_height = min_height
+
+        log.info('starting {} harvester download threads [{}, {}]'.format(self.thread_count, min_height, self.max_height))
         threads = [Thread(target=self._download_thread) for i in range(0, self.thread_count)]
 
         for thread in threads:
@@ -113,16 +121,8 @@ class HarvesterDownloader:
 
         log.info('downloading harvester activity to {} for last {} blocks'.format(output_filepath, self.num_blocks))
 
-        chain_height = create_blockchain_api_client(self.resources).get_chain_height()
-        log.info('chain height is {}'.format(chain_height))
-
-        log.info('processing {} blocks starting at {}'.format(self.num_blocks, chain_height))
-
-        batch_downloader = BatchDownloader(
-            self.resources,
-            thread_count,
-            (max(1, chain_height - self.num_blocks + 1), chain_height))
-        batch_downloader.download_all()
+        batch_downloader = BatchDownloader(self.resources, thread_count)
+        batch_downloader.download_all(self.num_blocks)
 
         with open(output_filepath, 'w') as outfile:
             column_names = ['signer_address', 'main_address', 'host', 'name', 'balance', 'version']
