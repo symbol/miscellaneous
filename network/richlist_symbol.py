@@ -5,7 +5,7 @@ from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client, load_resources
 
-from .PeersMapBuilder import NodeDescriptor, PeersMapBuilder
+from .PeersMapBuilder import EMPTY_NODE_DESCRIPTOR, PeersMapBuilder
 
 MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
 
@@ -31,7 +31,10 @@ class RichListDownloader:
 
         page_number = 1
         with open(output_filepath, 'w') as outfile:
-            column_names = ['address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch', 'host', 'name', 'version']
+            column_names = [
+                'address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch',
+                'host', 'name', 'height', 'finalized_height', 'version'
+            ]
             csv_writer = csv.DictWriter(outfile, column_names)
             csv_writer.writeheader()
 
@@ -54,7 +57,7 @@ class RichListDownloader:
         log.info('found {} mappings'.format(len(self.public_key_to_descriptor_map)))
 
     def _get_finalization_epoch(self):
-        finalization_epoch = self.api_client.get_finalization_epoch()
+        finalization_epoch = self.api_client.get_finalization_info().epoch
         log.info('finalization epoch is {}'.format(finalization_epoch))
         return finalization_epoch
 
@@ -75,7 +78,7 @@ class RichListDownloader:
             if voting_epoch_ranges:
                 max_voting_end_epoch = max(voting_epoch_range[1] for voting_epoch_range in voting_epoch_ranges)
 
-            node_descriptor = self.public_key_to_descriptor_map.get(account_info.public_key, NodeDescriptor('', '', '0.0.0.0'))
+            node_descriptor = self.public_key_to_descriptor_map.get(account_info.public_key, EMPTY_NODE_DESCRIPTOR)
 
             csv_writer.writerow({
                 'address': account_info.address,
@@ -86,6 +89,8 @@ class RichListDownloader:
 
                 'host': node_descriptor.host,
                 'name': node_descriptor.name,
+                'height': node_descriptor.height,
+                'finalized_height': node_descriptor.finalized_height,
                 'version': node_descriptor.version
             })
 

@@ -1,6 +1,7 @@
 import socket
 import ssl
 from binascii import unhexlify
+from collections import namedtuple
 from pathlib import Path
 
 from symbolchain.core.BufferReader import BufferReader
@@ -12,6 +13,9 @@ from zenlog import log
 
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
+
+FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height'])
+
 
 XYM_NETWORK_MOSAIC_IDS_MAP = {
     0x68: '6BED913FA20223F8',
@@ -59,23 +63,38 @@ class SymbolPeerClient:
             self.certificate_directory / 'node.full.crt.pem',
             keyfile=self.certificate_directory / 'node.key.pem')
 
+    def get_chain_height(self):
+        return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
+
+    def get_finalization_info(self):
+        # epoch and point are zeroed for now
+        return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
+
     def get_node_info(self):
+        return self._send_socket_request(0x111, self._parse_node_info_response)
+
+    @staticmethod
+    def get_peers():
+        # not implemented
+        return []
+
+    def _send_socket_request(self, packet_type, parser):
         try:
             with socket.create_connection((self.node_host, self.node_port), self.timeout) as sock:
                 with self.ssl_context.wrap_socket(sock) as ssock:
-                    self.send_node_info_request(ssock)
-                    return self.read_node_info_response(ssock)
+                    self._send_simple_request(ssock, packet_type)
+                    return parser(self._read_simple_response(ssock))
         except socket.timeout as ex:
             raise ConnectionRefusedError from ex
 
     @staticmethod
-    def send_node_info_request(ssock):
+    def _send_simple_request(ssock, packet_type):
         writer = BufferWriter()
         writer.write_int(8, 4)
-        writer.write_int(0x111, 4)
+        writer.write_int(packet_type, 4)
         ssock.send(writer.buffer)
 
-    def read_node_info_response(self, ssock):
+    def _read_simple_response(self, ssock):
         read_buffer = ssock.read()
 
         if 0 == len(read_buffer):
@@ -86,11 +105,26 @@ class SymbolPeerClient:
         while len(read_buffer) < size:
             read_buffer = b''.join([read_buffer, ssock.read()])
 
-        node_info = {}
-
         reader = BufferReader(read_buffer)
         reader.read_int(8)  # packet header
+        return reader
+
+    @staticmethod
+    def _parse_chain_statistics_response(reader):
+        chain_statistics = {}
+
+        chain_statistics['height'] = reader.read_int(8)
+        chain_statistics['finalizedHeight'] = reader.read_int(8)
+        chain_statistics['scoreHigh'] = reader.read_int(8)
+        chain_statistics['scoreLow'] = reader.read_int(8)
+
+        return chain_statistics
+
+    @staticmethod
+    def _parse_node_info_response(reader):
         reader.read_int(4)  # size
+
+        node_info = {}
 
         node_info['version'] = reader.read_int(4)
         node_info['publicKey'] = str(PublicKey(reader.read_bytes(32)))
@@ -105,11 +139,6 @@ class SymbolPeerClient:
         node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf-8')
 
         return node_info
-
-    @staticmethod
-    def get_peers():
-        # not implemented
-        return []
 
 
 class SymbolClient:
@@ -128,9 +157,13 @@ class SymbolClient:
         json_response = self._get_json('chain/info')
         return int(json_response['height'])
 
-    def get_finalization_epoch(self):
+    def get_finalization_info(self):
         json_response = self._get_json('chain/info')
-        return int(json_response['latestFinalizedBlock']['finalizationEpoch'])
+        json_finalization_info = json_response['latestFinalizedBlock']
+        return FinalizationInfo(
+            int(json_finalization_info['finalizationEpoch']),
+            int(json_finalization_info['finalizationPoint']),
+            int(json_finalization_info['height']))
 
     def get_harvester_signer_public_key(self, height):
         json_response = self._get_json('blocks/{}'.format(height))
@@ -146,6 +179,10 @@ class SymbolClient:
 
     def get_account_info(self, address):
         json_response = self._get_json('accounts/{}'.format(address))
+        if 'code' in json_response:
+            log.warning('unable to retrieve account info for account {}'.format(address))
+            return None
+
         return self._parse_account_info(json_response['account'])
 
     def get_richlist_account_infos(self, page_number, page_size, mosaic_id):

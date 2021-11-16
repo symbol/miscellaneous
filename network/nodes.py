@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 import time
 from threading import Lock, Thread
 
@@ -7,6 +8,7 @@ from requests.exceptions import RequestException
 from symbolchain.core.CryptoTypes import PublicKey
 from symbolchain.core.nem.Network import Network as NemNetwork
 from symbolchain.core.Network import NetworkLocator
+from symbolchain.core.symbol.Network import Network as SymbolNetwork
 from zenlog import log
 
 from client.ResourceLoader import load_resources, locate_blockchain_client_class
@@ -24,14 +26,22 @@ class NodeDownloader:
         self.api_client_class = locate_blockchain_client_class(resources)
         self.visited_hosts = set()
         self.remaining_api_clients = []
+        self.strong_api_clients = []
         self.public_key_to_node_info_map = {}
         self.busy_thread_count = 0
         self.lock = Lock()
+
+    @property
+    def is_nem(self):
+        return 'nem' == self.resources.friendly_name
 
     def discover(self):
         log.info('seeding crawler with known hosts')
         self.remaining_api_clients = [
             self.api_client_class(node_descriptor.host) for node_descriptor in self.resources.nodes.find_all_by_role(None)
+        ]
+        self.strong_api_clients = [
+            self.api_client_class(node_descriptor.host) for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
         ]
 
         log.info('starting {} crawler threads'.format(self.thread_count))
@@ -66,11 +76,13 @@ class NodeDownloader:
             is_reachable = False
             try:
                 json_node = api_client.get_node_info()
+                json_node['extraData'] = {'balance': 0, 'height': 0, 'finalizedHeight': 0}
 
-                if 'nem' == self.resources.friendly_name:
+                strong_api_client = random.choice(self.strong_api_clients)
+                if self.is_nem:
                     network = NetworkLocator.find_by_identifier(NemNetwork.NETWORKS, json_node['metaData']['networkId'])
                     node_address = network.public_key_to_address(PublicKey(json_node['identity']['public-key']))
-                    main_account_info = api_client.get_account_info(node_address, forwarded=True)
+                    main_account_info = strong_api_client.get_account_info(node_address, forwarded=True)
 
                     if 'ACTIVE' == main_account_info.remote_status:
                         json_node['identity']['node-public-key'] = json_node['identity']['public-key']
@@ -78,11 +90,22 @@ class NodeDownloader:
 
                     main_public_key = json_node['identity']['public-key']
                 else:
+                    network = NetworkLocator.find_by_identifier(SymbolNetwork.NETWORKS, json_node['networkIdentifier'])
+
                     main_public_key = json_node['publicKey']
 
                 is_reachable = True
 
                 json_peers = api_client.get_peers()
+
+                main_account_info = strong_api_client.get_account_info(network.public_key_to_address(PublicKey(main_public_key)))
+
+                json_node['extraData']['balance'] = main_account_info.balance if main_account_info else 0
+                json_node['extraData']['height'] = api_client.get_chain_height()
+
+                if not self.is_nem:
+                    json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
+
             except (RequestException, TimeoutError, ConnectionRefusedError) as ex:
                 log.warning('failed to load peers from {}:{} (reachable node? {})\n{}'.format(
                     api_client.node_host,

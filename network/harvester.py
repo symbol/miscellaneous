@@ -9,7 +9,7 @@ from zenlog import log
 
 from client.ResourceLoader import create_blockchain_facade, load_resources, locate_blockchain_client_class
 
-from .PeersMapBuilder import NodeDescriptor, PeersMapBuilder
+from .PeersMapBuilder import EMPTY_NODE_DESCRIPTOR, PeersMapBuilder
 
 
 class HarvesterDescriptor:
@@ -125,12 +125,12 @@ class HarvesterDownloader:
         batch_downloader.download_all(self.num_blocks)
 
         with open(output_filepath, 'w') as outfile:
-            column_names = ['signer_address', 'main_address', 'host', 'name', 'balance', 'version']
+            column_names = ['signer_address', 'main_address', 'host', 'name', 'height', 'finalized_height', 'version', 'balance']
             csv_writer = csv.DictWriter(outfile, column_names)
             csv_writer.writeheader()
 
             for harvester_descriptor in batch_downloader.public_key_to_descriptor_map.values():
-                node_descriptor = self.peers_map.get(harvester_descriptor.main_public_key, NodeDescriptor('', '', ''))
+                node_descriptor = self.peers_map.get(harvester_descriptor.main_public_key, EMPTY_NODE_DESCRIPTOR)
 
                 csv_writer.writerow({
                     'signer_address': harvester_descriptor.signer_address,
@@ -138,7 +138,10 @@ class HarvesterDownloader:
 
                     'host': node_descriptor.host,
                     'name': node_descriptor.name,
+                    'height': node_descriptor.height,
+                    'finalized_height': node_descriptor.finalized_height,
                     'version': node_descriptor.version,
+
                     'balance': harvester_descriptor.balance
                 })
 

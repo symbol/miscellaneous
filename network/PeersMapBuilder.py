@@ -5,7 +5,10 @@ from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client
 
-NodeDescriptor = namedtuple('NodeDescriptor', ['name', 'host', 'version'])
+NodeDescriptor = namedtuple('NodeDescriptor', ['name', 'host', 'version', 'height', 'finalized_height'])
+
+
+EMPTY_NODE_DESCRIPTOR = NodeDescriptor('', '', '', 0, 0)
 
 
 class PeersMapBuilder:
@@ -38,6 +41,8 @@ class PeersMapBuilder:
         return json_node['identity']['public-key'] if self.is_nem else json_node['publicKey']
 
     def _create_node_descriptor(self, json_node):
+        json_extra_data = json_node.get('extraData', {})
+
         if self.is_nem:
             json_identity = json_node['identity']
             json_endpoint = json_node['endpoint']
@@ -45,7 +50,9 @@ class PeersMapBuilder:
             return NodeDescriptor(
                 json_identity['name'],
                 '{}://{}:{}'.format(json_endpoint['protocol'], json_endpoint['host'], json_endpoint['port']),
-                json_metadata['version'])
+                json_metadata['version'],
+                json_extra_data.get('height', 0),
+                0)
 
         node_port = json_node['port']
         if json_node['roles'] & 2:
@@ -54,7 +61,9 @@ class PeersMapBuilder:
         return NodeDescriptor(
             json_node['friendlyName'],
             'http://{}:{}'.format(json_node['host'], node_port) if json_node['host'] else '',
-            self._format_symbol_version(json_node['version']))
+            self._format_symbol_version(json_node['version']),
+            json_extra_data.get('height', 0),
+            json_extra_data.get('finalizedHeight', 0))
 
     @staticmethod
     def _format_symbol_version(version):
