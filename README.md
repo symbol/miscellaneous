@@ -14,6 +14,18 @@ Example: prepare transactions as described in `account/samples/symbol_multisig_c
 python -m account.symbol_multisig_create --input account/samples/symbol_multisig_create.yaml
 ```
 
+### symbol_multisig_relink
+
+_prepares transactions for relinking Symbol voting public keys_
+
+Creates an aggregate transaction containing embedded voting key link and/or voting key unlink transactions signed by specified cosigners.
+
+Example: prepare transactions as described in `account/samples/symbol_multisig_relink.yaml`.
+
+```sh
+python -m account.symbol_multisig_relink --input account/samples/symbol_multisig_relink.yaml
+```
+
 ### two_part_send
 
 _prepares transactions for sending tokens from one account to another in two phases_

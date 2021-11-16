@@ -1,0 +1,36 @@
+output_directory: '.'
+
+mnemonics:
+  - name: alpaca_with_multsig_passphrase
+    mnemonic: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+    mnemonic_passphrase: 'samples :: symbol_multisig'
+
+links:
+  - blockchain: { name: symbol, network: testnet }
+    deadline: 20464603462  # node/time
+    fee_multiplier: 100
+    filename: 'voting_link'
+
+    main_public_key: 24C147C9C3D2C9B18B51B9D8D27BDAD3BBC1EDCD379E698AE5150D57FAEAC088
+    fee_mosaic_id: 0x091F837E059AE13C
+
+    link: { linked_public_key: 0A441A155F0BE50680E958CBB2366573DBFBFF6BE49EABA1506159CDF7A37006, start_epoch: 777, end_epoch: 900 }
+
+    cosigner_accounts:
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 1, address: TAZG2KHKST3ZCBTYMKMQHRLI72P7WPPGFIVYUOI }
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 2, address: TDKQIDGDRZ263KMC24U2S5YPMDGWCCHAIU7RABI }
+
+  - blockchain: { name: symbol, network: testnet }
+    deadline: 20468048477  # node/time
+    fee_multiplier: 100
+    filename: 'voting_relink'
+
+    main_public_key: 24C147C9C3D2C9B18B51B9D8D27BDAD3BBC1EDCD379E698AE5150D57FAEAC088
+    fee_mosaic_id: 0x091F837E059AE13C
+
+    unlink: { linked_public_key: 0A441A155F0BE50680E958CBB2366573DBFBFF6BE49EABA1506159CDF7A37006, start_epoch: 777, end_epoch: 900 }
+    link: { linked_public_key: 6722AE5D2B5398ACA91512A64AC8364B1DDA2F82624A543472614E74E849C56F, start_epoch: 778, end_epoch: 901 }
+
+    cosigner_accounts:
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 1, address: TAZG2KHKST3ZCBTYMKMQHRLI72P7WPPGFIVYUOI }
+      - { mnemonic: alpaca_with_multsig_passphrase, identifier: 2, address: TDKQIDGDRZ263KMC24U2S5YPMDGWCCHAIU7RABI }

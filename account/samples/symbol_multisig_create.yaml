@@ -6,7 +6,7 @@ mnemonics:
     mnemonic_passphrase: 'samples :: symbol_multisig'
 
 multisigs:
-  - network: testnet
+  - blockchain: { name: symbol, network: testnet }
     deadline: 15672643800  # node/time
     fee_multiplier: 100
     filename: 'symbol multisig create'

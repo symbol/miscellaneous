@@ -59,11 +59,11 @@ transfers:
     mosaic_id: 0x091F837E059AE13C
 
   - blockchain: { name: symbol, network: testnet }
-    deadline: 15711019530  # node/time
+    deadline: 20464613462  # node/time
     fee_multiplier: 100
     filename_pattern: 'symbol multisig transfer with message ({})'
 
-    signer_account: { mnemonic: alpaca_with_multsig_passphrase, identifier: 0, address: TA3QSN2APXGG5QF4H32G25FB2AWLQZZSPLXZTBI }
+    main_public_key: 24C147C9C3D2C9B18B51B9D8D27BDAD3BBC1EDCD379E698AE5150D57FAEAC088
     recipient_address: TBCVKIKTCAYWC2PATU2JA4O67N2BR6Z4ELLFNAA
 
     sweep_amount: 2000000

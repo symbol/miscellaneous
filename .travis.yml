@@ -22,6 +22,7 @@ jobs:
     - stage: run account scripts
       script:
         - python -m account.symbol_multisig_create --input account/samples/symbol_multisig_create.yaml
+        - python -m account.symbol_multisig_relink --input account/samples/symbol_multisig_relink.yaml
         - python -m account.two_part_send --input account/samples/two_part_send.yaml
         - python -m account.verify_ownership --input account/samples/verify_ownership.yaml
 

@@ -1,10 +1,6 @@
 import argparse
 
-import yaml
-from zenlog import log
-
-from .utils.facade_utils import BlockchainDescriptor, create_blockchain_facade, save_transaction
-from .utils.MnemonicRepository import MnemonicRepository
+from .utils.facade_utils import main_loop, save_transaction
 from .utils.SymbolAggregateBuilder import SymbolAggregateBuilder
 
 
@@ -40,26 +36,12 @@ class MultisigPreparer:
         return self.facade.network.public_key_to_address(key_pair.public_key)
 
 
-def prepare_multisig(output_directory, mnemonic_repository, transaction_dict):
-    facade = create_blockchain_facade(BlockchainDescriptor('symbol', transaction_dict['network']))
-    preparer = MultisigPreparer(facade, output_directory, mnemonic_repository)
-    preparer.save(transaction_dict)
-
-
 def main():
     parser = argparse.ArgumentParser(description='prepares transactions for creating symbol multisig accounts')
     parser.add_argument('--input', help='input file with information about multisigs to prepare', required=True)
     args = parser.parse_args()
 
-    with open(args.input, 'rt') as infile:
-        input_dict = yaml.load(infile, Loader=yaml.SafeLoader)
-
-        mnemonic_repository = MnemonicRepository(input_dict['mnemonics'])
-
-        for transaction_dict in input_dict['multisigs']:
-            prepare_multisig(input_dict['output_directory'], mnemonic_repository, transaction_dict)
-
-        log.info('prepared {} multisig account(s)'.format(len(input_dict['multisigs'])))
+    main_loop(args, MultisigPreparer, 'multisigs')
 
 
 if '__main__' == __name__:
