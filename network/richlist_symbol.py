@@ -18,6 +18,8 @@ class RichListDownloader:
         self.nodes_input_filepath = nodes_input_filepath
         self.api_client = create_blockchain_api_client(self.resources)
 
+        self.finalization_epoch = 0
+        self.voters_map = {}
         self.public_key_to_descriptor_map = {}
 
     def download(self, output_filepath):
@@ -27,12 +29,12 @@ class RichListDownloader:
             output_filepath,
             self.mosaic_id,
             self.min_balance))
-        finalization_epoch = self._get_finalization_epoch()
+        self._download_finalization_information()
 
         page_number = 1
         with open(output_filepath, 'w') as outfile:
             column_names = [
-                'address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch',
+                'address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch', 'current_epoch_votes',
                 'host', 'name', 'height', 'finalized_height', 'version'
             ]
             csv_writer = csv.DictWriter(outfile, column_names)
@@ -41,7 +43,7 @@ class RichListDownloader:
             while True:
                 log.debug('processing page {}'.format(page_number))
 
-                if not self._download_page(page_number, finalization_epoch, csv_writer):
+                if not self._download_page(page_number, csv_writer):
                     return
 
                 page_number += 1
@@ -54,38 +56,37 @@ class RichListDownloader:
         builder.build()
         self.public_key_to_descriptor_map = builder.peers_map
 
-        log.info('found {} mappings'.format(len(self.public_key_to_descriptor_map)))
+    def _download_finalization_information(self):
+        self.finalization_epoch = self.api_client.get_finalization_info().epoch
+        self.voters_map = self.api_client.get_voters(self.finalization_epoch)
 
-    def _get_finalization_epoch(self):
-        finalization_epoch = self.api_client.get_finalization_info().epoch
-        log.info('finalization epoch is {}'.format(finalization_epoch))
-        return finalization_epoch
+        log.info('finalization epoch is {} ({} participating voters)'.format(self.finalization_epoch, len(self.voters_map)))
 
-    def _download_page(self, page_number, finalization_epoch, csv_writer):
+    def _download_page(self, page_number, csv_writer):
         for account_info in self.api_client.get_richlist_account_infos(page_number, 100, self.mosaic_id):
             if account_info.balance < self.min_balance:
                 log.info('found account {} with balance {} less than min balance'.format(account_info.address, account_info.balance))
                 return False
 
-            voting_epoch_ranges = account_info.voting_epoch_ranges
-
-            is_voting = any(
-                voting_epoch_range[0] <= finalization_epoch <= voting_epoch_range[1]
-                for voting_epoch_range in voting_epoch_ranges
+            active_voting_public_key = next(
+                (voting_public_key.public_key for voting_public_key in account_info.voting_public_keys
+                    if voting_public_key.start_epoch <= self.finalization_epoch <= voting_public_key.end_epoch),
+                None
             )
 
             max_voting_end_epoch = 0
-            if voting_epoch_ranges:
-                max_voting_end_epoch = max(voting_epoch_range[1] for voting_epoch_range in voting_epoch_ranges)
+            if account_info.voting_public_keys:
+                max_voting_end_epoch = max(voting_public_key.end_epoch for voting_public_key in account_info.voting_public_keys)
 
             node_descriptor = self.public_key_to_descriptor_map.get(account_info.public_key, EMPTY_NODE_DESCRIPTOR)
 
             csv_writer.writerow({
                 'address': account_info.address,
                 'balance': account_info.balance,
-                'is_voting': is_voting,
-                'has_ever_voted': any(voting_epoch_ranges),
+                'is_voting': 'True' if active_voting_public_key else 'False',
+                'has_ever_voted': any(account_info.voting_public_keys),
                 'voting_end_epoch': max_voting_end_epoch,
+                'current_epoch_votes': '|'.join(self.voters_map.get(active_voting_public_key, [])),
 
                 'host': node_descriptor.host,
                 'name': node_descriptor.name,

@@ -15,6 +15,7 @@ from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
 
 FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height'])
+VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'public_key'])
 
 
 XYM_NETWORK_MOSAIC_IDS_MAP = {
@@ -47,7 +48,7 @@ class AccountInfo:
 
         self.remote_status = None
         self.linked_public_key = None
-        self.voting_epoch_ranges = []
+        self.voting_public_keys = []
 
 
 class SymbolPeerClient:
@@ -217,10 +218,30 @@ class SymbolClient:
             account_info.linked_public_key = json_supplemental_public_keys['linked']['publicKey']
 
         if 'voting' in json_supplemental_public_keys:
-            for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']:
-                account_info.voting_epoch_ranges.append((json_voting_public_key['startEpoch'], json_voting_public_key['endEpoch']))
+            account_info.voting_public_keys = [
+                VotingPublicKey(
+                    json_voting_public_key['startEpoch'],
+                    json_voting_public_key['endEpoch'],
+                    json_voting_public_key['publicKey'])
+                for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']
+            ]
 
         return account_info
+
+    def get_voters(self, finalization_epoch):
+        json_response = self._get_json('finalization/proof/epoch/{}'.format(finalization_epoch))
+
+        voters_map = {}
+        for json_message_group in json_response['messageGroups']:
+            stage = 'PRECOMMIT' if 1 == json_message_group['stage'] else 'PREVOTE'
+            for json_signature in json_message_group['signatures']:
+                voting_public_key = json_signature['root']['parentPublicKey']
+                if voting_public_key not in voters_map:
+                    voters_map[voting_public_key] = []
+
+                voters_map[voting_public_key].append(stage)
+
+        return voters_map
 
     def get_harvests(self, address, start_id=None):
         json_response = self._get_page('statements/transaction?targetAddress={}&order=desc'.format(address), start_id)
