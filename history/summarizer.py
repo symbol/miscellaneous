@@ -18,10 +18,10 @@ class Loader():
         self.rows = []
 
     def load(self, filename):
-        log.info('loading input from {}'.format(filename))
+        log.info(f'loading input from {filename}')
 
         snapshots = []
-        with open(self.directory / filename, 'r') as infile:
+        with open(self.directory / filename, 'rt', encoding='utf8') as infile:
             csv_reader = csv.DictReader(infile, GROUPER_FIELD_NAMES)
             next(csv_reader)  # skip header
 
@@ -63,10 +63,11 @@ class Loader():
                     row[key_name] = 0
 
     def save(self, filename):
-        log.info('saving {} {} balance table to {}'.format(self.mode, 'fiat' if self.use_fiat else 'token', filename))
+        balance_unit_description = 'fiat' if self.use_fiat else 'token'
+        log.info(f'saving {self.mode} {balance_unit_description} balance table to {filename}')
 
         field_names = ['date', 'height'] + sorted(self.key_names.keys())
-        with open(filename, 'w', newline='') as outfile:
+        with open(filename, 'wt', newline='', encoding='utf8') as outfile:
             csv_writer = csv.DictWriter(outfile, field_names)
             csv_writer.writerow(dict(zip(field_names, field_names)))
 

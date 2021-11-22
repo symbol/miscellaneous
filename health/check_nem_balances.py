@@ -68,7 +68,7 @@ class NetworkPrinter:
 
     def print_all(self, group_names, token_price):
         for group_name in group_names:
-            group_description = '[{} @ {}] \033[36m{}\033[39m ACCOUNTS'.format(self.friendly_name, self.chain_height, group_name.upper())
+            group_description = f'[{self.friendly_name} @ {self.chain_height}] \033[36m{group_name.upper()}\033[39m ACCOUNTS'
 
             total_balance, num_matching_accounts = self._print_accounts(
                 [account_descriptor.address for account_descriptor in self.resources.accounts.find_all_by_role(group_name)],
@@ -81,7 +81,8 @@ class NetworkPrinter:
                 self._print_header(group_description)
 
             self.print_hline()
-            print('{0:,.6f} (~${1:,.2f} USD)'.format(total_balance, int(total_balance) * float(token_price)))
+            total_balance_usd = int(total_balance) * float(token_price)
+            print(f'{total_balance:,.6f} (~${total_balance_usd:,.2f} USD)')
             self.print_hline()
             print()
 
@@ -100,7 +101,7 @@ class NetworkPrinter:
 
             formatted_last_harvest_height = self._get_formatted_last_harvest_height(account_view.address)
 
-            print('| {:<40} |  {}  | {} | {:.5f} | {} | {:>20,.6f} | {:>3} |'.format(
+            print('| {:<40} |  {}  | {} | {:.5f} | {} | {:>20,.6f} | {:>3} |'.format(  # pylint: disable=consider-using-f-string
                 self._get_account_display_name(account_view.address),
                 ' ' if not account_view.public_key else 'X',
                 account_view.account_type[0:4].upper(),
@@ -116,7 +117,8 @@ class NetworkPrinter:
 
     def _print_header(self, description):
         # 50 to account for ansi escape color codes
-        print('| {:<50} | PK  | TYPE | IMPORTA |  HARVEST HEIGHT  | {:<20} | V % | '.format(description, 'Balance'))
+        balance_header_text = 'Balance'
+        print(f'| {description:<50} | PK  | TYPE | IMPORTA |  HARVEST HEIGHT  | {balance_header_text:<20} | V % | ')
         self.print_hline()
 
     def _get_account_display_name(self, address):
@@ -129,15 +131,14 @@ class NetworkPrinter:
     def _get_formatted_last_harvest_height(self, address):
         harvest_snapshots = self.api_client.get_harvests(address)
         last_harvest_height = 0 if not harvest_snapshots else harvest_snapshots[0].height
-
         last_harvest_height_description, color_name = self._last_harvest_height_to_string(last_harvest_height)
 
-        formatted_string = '{:>7} {:>8}'.format(last_harvest_height, last_harvest_height_description)
+        formatted_string = f'{last_harvest_height:>7} {last_harvest_height_description:>8}'
         if not color_name:
             return formatted_string
 
         color_codes = {'blue': 34, 'red': 31, 'yellow': 33}
-        return '\033[{}m{}\033[39m'.format(color_codes[color_name], formatted_string)
+        return f'\033[{color_codes[color_name]}m{formatted_string}\033[39m'
 
     def _last_harvest_height_to_string(self, last_harvest_height):
         if 0 == last_harvest_height:
@@ -148,14 +149,16 @@ class NetworkPrinter:
         blocks_per_minute = blocks_per_hour // 60
 
         if blocks_since_harvest < 100 * blocks_per_minute:
-            return ('~ {:5.2f}M'.format(blocks_since_harvest / blocks_per_minute), None)
+            minutes = blocks_since_harvest / blocks_per_minute
+            return (f'~ {minutes:5.2f}M', None)
 
         if blocks_since_harvest < 100 * blocks_per_hour:
             hours = blocks_since_harvest / blocks_per_hour
             color_name = 'red' if hours >= 24 else 'yellow'
-            return ('~ {:5.2f}H'.format(hours), color_name)
+            return (f'~ {hours:5.2f}H', color_name)
 
-        return ('~ {:5.2f}D'.format(blocks_since_harvest / self.blocks_per_day), 'red')
+        days = blocks_since_harvest / self.blocks_per_day
+        return (f'~ {days:5.2f}D', 'red')
 
     @staticmethod
     def print_hline():
@@ -178,8 +181,8 @@ def main():
     coin_gecko_client = CoinGeckoClient()
     token_price = coin_gecko_client.get_price_spot(resources.ticker_name, 'usd')
 
-    print(' UTC Time: {}'.format(datetime.utcnow()))
-    print('{} Price: {:.6f}'.format(resources.currency_symbol.upper(), token_price))
+    print(f' UTC Time: {datetime.utcnow()}')
+    print(f'{resources.currency_symbol.upper()} Price: {token_price:.6f}')
     print()
 
     network_printer_options = NetworkPrinterOptions(**{

@@ -16,9 +16,9 @@ class Reconciler():
         self.num_errors = 0
 
     def load(self, filename):
-        log.info('loading input from {}'.format(filename))
+        log.info(f'loading input from {filename}')
 
-        with open(filename, 'r') as infile:
+        with open(filename, 'rt', encoding='utf8') as infile:
             csv_reader = csv.DictReader(infile)
 
             for row in csv_reader:
@@ -38,7 +38,7 @@ class Reconciler():
         api_client = create_blockchain_api_client(self.resources, 'historical')
 
         for account_name in self._account_names:
-            log.info('[*] verifying {} balances for {}'.format(self.mode, account_name))
+            log.info(f'[*] verifying {self.mode} balances for {account_name}')
             account_descriptor = self.resources.accounts.try_find_by_name(account_name)
 
             calculated_balance = 0
@@ -54,7 +54,7 @@ class Reconciler():
         api_client = create_blockchain_api_client(self.resources)
 
         for account_name in self._account_names:
-            log.info('[*] verifying {} balances for {}'.format(self.mode, account_name))
+            log.info(f'[*] verifying {self.mode} balances for {account_name}')
             account_descriptor = self.resources.accounts.try_find_by_name(account_name)
 
             calculated_balance = 0
@@ -67,17 +67,15 @@ class Reconciler():
             self._print_message(self.rows[-1], account_name, calculated_balance, reported_balance)
 
     def _print_message(self, row, account_name, calculated_balance, reported_balance):
-        main_message_body = '<{}> {} at H{} has balance {}'.format(
-            row['date'],
-            account_name,
-            row['height'],
-            calculated_balance)
+        date = row['date']
+        height = row['height']
+        main_message_body = f'<{date}> {account_name} at H{height} has balance {calculated_balance}'
 
         if calculated_balance == reported_balance:
-            log.info('[+] {}'.format(main_message_body))
+            log.info(f'[+] {main_message_body}')
         else:
             difference_balance = round(calculated_balance - reported_balance, 6)
-            log.error('[-] {} but network reported {} ({})'.format(main_message_body, reported_balance, difference_balance))
+            log.error(f'[-] {main_message_body} but network reported {reported_balance} ({difference_balance})')
             self.num_errors += 1
 
 

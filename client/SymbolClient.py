@@ -99,7 +99,7 @@ class SymbolPeerClient:
         read_buffer = ssock.read()
 
         if 0 == len(read_buffer):
-            raise ConnectionRefusedError('socket returned empty data for {}'.format(self.node_host))
+            raise ConnectionRefusedError(f'socket returned empty data for {self.node_host}')
 
         size = BufferReader(read_buffer).read_int(4)
 
@@ -136,8 +136,8 @@ class SymbolPeerClient:
 
         host_size = reader.read_int(1)
         name_size = reader.read_int(1)
-        node_info['host'] = reader.read_bytes(host_size).decode('utf-8')
-        node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf-8')
+        node_info['host'] = reader.read_bytes(host_size).decode('utf8')
+        node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf8')
 
         return node_info
 
@@ -167,7 +167,7 @@ class SymbolClient:
             int(json_finalization_info['height']))
 
     def get_harvester_signer_public_key(self, height):
-        json_response = self._get_json('blocks/{}'.format(height))
+        json_response = self._get_json(f'blocks/{height}')
         return json_response['block']['signerPublicKey']
 
     def get_node_info(self):
@@ -179,16 +179,16 @@ class SymbolClient:
         return json_response
 
     def get_account_info(self, address):
-        json_response = self._get_json('accounts/{}'.format(address))
+        json_response = self._get_json(f'accounts/{address}')
         if 'code' in json_response:
-            log.warning('unable to retrieve account info for account {}'.format(address))
+            log.warning(f'unable to retrieve account info for account {address}')
             return None
 
         return self._parse_account_info(json_response['account'])
 
     def get_richlist_account_infos(self, page_number, page_size, mosaic_id):
-        url_pattern = 'accounts?pageNumber={}&pageSize={}&order=desc&orderBy=balance&mosaicId={}'
-        json_response = self._get_json(url_pattern.format(page_number, page_size, mosaic_id))
+        url = f'accounts?pageNumber={page_number}&pageSize={page_size}&order=desc&orderBy=balance&mosaicId={mosaic_id}'
+        json_response = self._get_json(url)
 
         account_infos = []
         for json_account_container in json_response['data']:
@@ -229,7 +229,7 @@ class SymbolClient:
         return account_info
 
     def get_voters(self, finalization_epoch):
-        json_response = self._get_json('finalization/proof/epoch/{}'.format(finalization_epoch))
+        json_response = self._get_json(f'finalization/proof/epoch/{finalization_epoch}')
 
         voters_map = {}
         for json_message_group in json_response['messageGroups']:
@@ -244,7 +244,7 @@ class SymbolClient:
         return voters_map
 
     def get_harvests(self, address, start_id=None):
-        json_response = self._get_page('statements/transaction?targetAddress={}&order=desc'.format(address), start_id)
+        json_response = self._get_page(f'statements/transaction?targetAddress={address}&order=desc', start_id)
 
         snapshots = []
         for json_statement_envelope in json_response['data']:
@@ -260,7 +260,7 @@ class SymbolClient:
                     if Address(address) == Address(unhexlify(json_receipt['targetAddress'])):
                         snapshot.amount += int(json_receipt['amount'])
                 elif receipt_type not in RECEIPT_TYPES.values():
-                    log.warn('detected receipt of unknown type 0x{:X}'.format(receipt_type))
+                    log.warn(f'detected receipt of unknown type 0x{receipt_type:X}')
                     continue
 
             snapshot.amount /= MICROXYM_PER_XYM
@@ -270,7 +270,7 @@ class SymbolClient:
         return snapshots
 
     def get_transfers(self, address, start_id=None):
-        json_response = self._get_page('transactions/confirmed?address={}&order=desc&embedded=true'.format(address), start_id)
+        json_response = self._get_page(f'transactions/confirmed?address={address}&order=desc&embedded=true', start_id)
 
         snapshots = []
         for json_transaction_and_meta in json_response['data']:
@@ -298,7 +298,7 @@ class SymbolClient:
         fee_microxym = 0
         transaction_type = json_transaction['type']
         if self._is_aggregate(transaction_type):
-            json_aggregate_transaction = self._get_json('transactions/confirmed/{}'.format(transaction_hash))
+            json_aggregate_transaction = self._get_json(f'transactions/confirmed/{transaction_hash}')
             json_embedded_transactions = [
                 json_embedded_transaction_and_meta['transaction']
                 for json_embedded_transaction_and_meta in json_aggregate_transaction['transaction']['transactions']
@@ -307,7 +307,7 @@ class SymbolClient:
         elif TRANSACTION_TYPES['transfer'] == transaction_type:
             amount_microxym = self._calculate_transfer_amount(snapshot.address, [json_transaction])
         else:
-            snapshot.comments = 'unsupported transaction of type 0x{:X}'.format(transaction_type)
+            snapshot.comments = f'unsupported transaction of type 0x{transaction_type:X}'
 
         if self._is_signer(snapshot.address, json_transaction):
             fee_microxym = -effective_fee
@@ -346,13 +346,13 @@ class SymbolClient:
         return any(TRANSACTION_TYPES[name] == transaction_type for name in ['aggregate_complete', 'aggregate_bonded'])
 
     def _get_block_time_and_multiplier(self, height):
-        json_block_and_meta = self._get_json('blocks/{}'.format(height))
+        json_block_and_meta = self._get_json(f'blocks/{height}')
         json_block = json_block_and_meta['block']
         return (NetworkTimestamp(int(json_block['timestamp'])).to_datetime(), json_block['feeMultiplier'])
 
     def _get_page(self, rest_path, start_id):
-        return self._get_json(rest_path if not start_id else '{}&offset={}'.format(rest_path, start_id))
+        return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')
 
     def _get_json(self, rest_path):
         json_http_headers = {'Content-type': 'application/json'}
-        return self.session.get('http://{}:{}/{}'.format(self.node_host, self.node_port, rest_path), headers=json_http_headers).json()
+        return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()

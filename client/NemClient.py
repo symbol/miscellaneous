@@ -52,7 +52,8 @@ class NemClient:
         return json_response['data']
 
     def get_account_info(self, address, forwarded=False):
-        json_response = self._get_json('account/get{}?address={}'.format('/forwarded' if forwarded else '', address))
+        subpath = '/forwarded' if forwarded else ''
+        json_response = self._get_json(f'account/get{subpath}?address={address}')
 
         json_account = json_response['account']
         json_meta = json_response['meta']
@@ -69,7 +70,7 @@ class NemClient:
         return account_info
 
     def get_historical_balance(self, address, height):
-        rest_path = 'account/historical/get?address={}&startHeight={height}&endHeight={height}&increment=1'.format(address, height=height)
+        rest_path = f'account/historical/get?address={address}&startHeight={height}&endHeight={height}&increment=1'
         json_response = self._get_json(rest_path)
         return float(json_response['data'][0]['balance']) / MICROXEM_PER_XEM
 
@@ -132,7 +133,7 @@ class NemClient:
             if snapshot.address != json_transaction['recipient']:
                 amount_microxem *= -1
         else:
-            snapshot.comments = 'unsupported transaction of type {}'.format(transaction_type)
+            snapshot.comments = f'unsupported transaction of type {transaction_type}'
 
         if NemClient._is_signer(snapshot.address, json_transaction):
             fee_microxem = -int(json_transaction['fee'])
@@ -144,19 +145,19 @@ class NemClient:
         return Address(address) == Network.MAINNET.public_key_to_address(PublicKey(json_transaction['signer']))
 
     def _get_account_page(self, name, address, start_id):
-        rest_path = 'account/{}?address={}'.format(name, address)
+        rest_path = f'account/{name}?address={address}'
         if start_id:
-            rest_path += '&id={}'.format(start_id)
+            rest_path += f'&id={start_id}'
 
         return self._get_json(rest_path)
 
     def _get_json(self, rest_path):
         json_http_headers = {'Content-type': 'application/json'}
-        return self.session.get('http://{}:{}/{}'.format(self.node_host, self.node_port, rest_path), headers=json_http_headers).json()
+        return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
 
     def _post_json(self, rest_path, params):
         json_http_headers = {'Content-type': 'application/json'}
         return self.session.post(
-            'http://{}:{}/{}'.format(self.node_host, self.node_port, rest_path),
+            f'http://{self.node_host}:{self.node_port}/{rest_path}',
             json=params,
             headers=json_http_headers).json()

@@ -25,14 +25,12 @@ class RichListDownloader:
     def download(self, output_filepath):
         self._prepare_nodes()
 
-        log.info('downloading rich list activity to {} for accounts with {} balances at least {}'.format(
-            output_filepath,
-            self.mosaic_id,
-            self.min_balance))
+        log.info(f'downloading rich list activity to {output_filepath} for accounts with {self.mosaic_id} balances'
+                 f' at least {self.min_balance}')
         self._download_finalization_information()
 
         page_number = 1
-        with open(output_filepath, 'w') as outfile:
+        with open(output_filepath, 'wt', encoding='utf8') as outfile:
             column_names = [
                 'address', 'balance', 'is_voting', 'has_ever_voted', 'voting_end_epoch', 'current_epoch_votes',
                 'host', 'name', 'height', 'finalized_height', 'version'
@@ -41,7 +39,7 @@ class RichListDownloader:
             csv_writer.writeheader()
 
             while True:
-                log.debug('processing page {}'.format(page_number))
+                log.debug(f'processing page {page_number}')
 
                 if not self._download_page(page_number, csv_writer):
                     return
@@ -60,12 +58,12 @@ class RichListDownloader:
         self.finalization_epoch = self.api_client.get_finalization_info().epoch
         self.voters_map = self.api_client.get_voters(self.finalization_epoch)
 
-        log.info('finalization epoch is {} ({} participating voters)'.format(self.finalization_epoch, len(self.voters_map)))
+        log.info(f'finalization epoch is {self.finalization_epoch} ({len(self.voters_map)} participating voters)')
 
     def _download_page(self, page_number, csv_writer):
         for account_info in self.api_client.get_richlist_account_infos(page_number, 100, self.mosaic_id):
             if account_info.balance < self.min_balance:
-                log.info('found account {} with balance {} less than min balance'.format(account_info.address, account_info.balance))
+                log.info(f'found account {account_info.address} with balance {account_info.balance} less than min balance')
                 return False
 
             active_voting_public_key = next(

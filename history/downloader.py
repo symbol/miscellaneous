@@ -16,9 +16,9 @@ class ChainActivityDownloader:
         self.account_descriptor = account_descriptor
 
     def download(self, start_date, end_date, output_filepath):
-        log.info('[{}] downloading chain activity from {} to {}'.format(output_filepath,  start_date, end_date))
+        log.info(f'[{output_filepath}] downloading chain activity from {start_date} to {end_date}')
 
-        with open(output_filepath, 'w') as outfile:
+        with open(output_filepath, 'wt', encoding='utf8') as outfile:
             column_names = ['timestamp', 'amount', 'fee_paid', 'height', 'address', 'tag', 'comments', 'hash']
             csv_writer = csv.DictWriter(outfile, column_names, extrasaction='ignore')
             csv_writer.writeheader()
@@ -56,7 +56,7 @@ class ChainActivityDownloader:
 
             start_id = snapshots[-1].collation_id
 
-            log.debug('[{}::{}] finished processing {}'.format(output_filepath, mode, snapshots[-1].timestamp))
+            log.debug(f'[{output_filepath}::{mode}] finished processing {snapshots[-1].timestamp}')
 
 
 class PriceDownloader:
@@ -65,11 +65,11 @@ class PriceDownloader:
         self.fiat_currency = fiat_currency
 
     def download(self, start_date, end_date, output_filepath):
-        log.info('[{}] downloading prices from {} to {}'.format(output_filepath,  start_date, end_date))
+        log.info(f'[{output_filepath}] downloading prices from {start_date} to {end_date}')
 
         coin_gecko_client = CoinGeckoClient()
 
-        with open(output_filepath, 'w') as outfile:
+        with open(output_filepath, 'wt', encoding='utf8') as outfile:
             csv_writer = csv.DictWriter(outfile, ['date', 'price', 'volume', 'market_cap', 'comments'])
             csv_writer.writeheader()
 
@@ -82,7 +82,7 @@ class PriceDownloader:
 
                 csv_writer.writerow(vars(snapshot))
 
-                log.debug('[{}] finished processing {}'.format(output_filepath, current_date))
+                log.debug(f'[{output_filepath}] finished processing {current_date}')
 
                 current_date += datetime.timedelta(days=1)
 
@@ -100,7 +100,7 @@ def main():
 
     output_directory = Path(args.output)
     if output_directory.exists():
-        log.warn('output directory \'{}\' already exists'.format(args.output))
+        log.warn(f'output directory \'{args.output}\' already exists')
         return
 
     log.info('starting downloads!')
@@ -114,11 +114,11 @@ def main():
     threads = []
     for account_descriptor in resources.accounts.find_all_by_role(None):
         chain_activity_downloader = ChainActivityDownloader(resources, account_descriptor)
-        account_output_filepath = output_directory / '{}.csv'.format(account_descriptor.name)
+        account_output_filepath = output_directory / f'{account_descriptor.name}.csv'
         threads.append(Thread(target=chain_activity_downloader.download, args=(start_date, end_date, account_output_filepath)))
 
     price_downloader = PriceDownloader(resources, args.fiat_currency)
-    price_output_filepath = output_directory / '{}_{}.csv'.format(resources.ticker_name, args.fiat_currency)
+    price_output_filepath = output_directory / f'{resources.ticker_name}_{args.fiat_currency}.csv'
     threads.append(Thread(target=price_downloader.download, args=(start_date, end_date, price_output_filepath)))
 
     for thread in threads:

@@ -14,21 +14,21 @@ class GroupKey():
         self.account_type = 'ALL'
 
     def __str__(self):
-        return '{}::{}::{}'.format(self.time_point, self.tag, self.account_type)
+        return f'{self.time_point}::{self.tag}::{self.account_type}'
 
 
 class Grouper():
     def __init__(self, mode):
         self.mode = mode
 
-        self.map = dict()
+        self.map = {}
         self.field_names = GROUPER_FIELD_NAMES
         self.column_names = []
 
     def load(self, filename):
-        log.info('loading all transactions from {}'.format(filename))
+        log.info(f'loading all transactions from {filename}')
 
-        with open(filename, 'r') as infile:
+        with open(filename, 'rt', encoding='utf8') as infile:
             csv_reader = csv.DictReader(infile, self.field_names)
             self.column_names = next(csv_reader)  # skip header
 
@@ -88,9 +88,9 @@ class Grouper():
         snapshot.height = max(snapshot.height, new_snapshot.height)
 
     def save(self, filename):
-        log.info('saving {} grouped report to {}'.format(self.mode, filename))
+        log.info(f'saving {self.mode} grouped report to {filename}')
 
-        with open(filename, 'w', newline='') as outfile:
+        with open(filename, 'wt', newline='', encoding='utf8') as outfile:
             csv_writer = csv.DictWriter(outfile, self.field_names, extrasaction='ignore')
             csv_writer.writerow(self.column_names)
 

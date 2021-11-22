@@ -16,7 +16,7 @@ Resources = namedtuple('Resources', [
 
 
 def load_resources(resources_path):
-    with open(resources_path, 'r') as infile:
+    with open(resources_path, 'rt', encoding='utf8') as infile:
         resources = yaml.load(infile, Loader=yaml.SafeLoader)
         return Resources(**{
             'friendly_name': resources['friendly_name'],

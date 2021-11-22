@@ -44,7 +44,7 @@ class NodeDownloader:
             self.api_client_class(node_descriptor.host) for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
         ]
 
-        log.info('starting {} crawler threads'.format(self.thread_count))
+        log.info(f'starting {self.thread_count} crawler threads')
         threads = [Thread(target=self._discover_thread) for i in range(0, self.thread_count)]
 
         for thread in threads:
@@ -53,7 +53,7 @@ class NodeDownloader:
         for thread in threads:
             thread.join()
 
-        log.info('crawling completed and discovered {} nodes'.format(len(self.public_key_to_node_info_map)))
+        log.info(f'crawling completed and discovered {len(self.public_key_to_node_info_map)} nodes')
 
     def _discover_thread(self):
         while self.remaining_api_clients or self.busy_thread_count:
@@ -67,11 +67,8 @@ class NodeDownloader:
                     time.sleep(2)
                     continue
 
-            log.debug('processing {} [{} discovered, {} remaining, {} busy]'.format(
-                api_client.node_host,
-                len(self.public_key_to_node_info_map),
-                len(self.remaining_api_clients),
-                self.busy_thread_count))
+            log.debug(f'processing {api_client.node_host} [{len(self.public_key_to_node_info_map)} discovered,'
+                      f' {len(self.remaining_api_clients)} remaining, {self.busy_thread_count} busy]')
 
             is_reachable = False
             try:
@@ -107,11 +104,8 @@ class NodeDownloader:
                     json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
 
             except (RequestException, TimeoutError, ConnectionRefusedError) as ex:
-                log.warning('failed to load peers from {}:{} (reachable node? {})\n{}'.format(
-                    api_client.node_host,
-                    api_client.node_port,
-                    is_reachable,
-                    ex))
+                log.warning(f'failed to load peers from {api_client.node_host}:{api_client.node_port} (reachable node? {is_reachable})\n'
+                            f'{ex}')
                 json_peers = []
 
             with self.lock:
@@ -121,7 +115,7 @@ class NodeDownloader:
                 self.busy_thread_count -= 1
 
             if self.busy_thread_count < self.thread_count - 1:
-                log.debug('idling threads detected; only {} busy'.format(self.busy_thread_count))
+                log.debug(f'idling threads detected; only {self.busy_thread_count} busy')
 
     # this function must be called in context of self.lock
     def _pop_next_api_client(self):
@@ -154,8 +148,8 @@ class NodeDownloader:
                 self.remaining_api_clients.append(peer_api_client)
 
     def save(self, output_filepath):
-        log.info('saving nodes json to {}'.format(output_filepath))
-        with open(output_filepath, 'w') as outfile:
+        log.info(f'saving nodes json to {output_filepath}')
+        with open(output_filepath, 'wt', encoding='utf8') as outfile:
             json.dump(list(self.public_key_to_node_info_map.values()), outfile, indent=2, sort_keys='identity.name')
 
 

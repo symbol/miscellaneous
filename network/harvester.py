@@ -43,12 +43,12 @@ class BatchDownloader:
 
         chain_height = random.choice(self.api_clients).get_chain_height()
 
-        log.info('chain height is {}'.format(chain_height))
+        log.info(f'chain height is {chain_height}')
         min_height = max(1, chain_height - num_blocks + 1)
         self.max_height = chain_height
         self.next_height = min_height
 
-        log.info('starting {} harvester download threads [{}, {}]'.format(self.thread_count, min_height, self.max_height))
+        log.info(f'starting {self.thread_count} harvester download threads [{min_height}, {self.max_height}]')
         threads = [Thread(target=self._download_thread) for i in range(0, self.thread_count)]
 
         for thread in threads:
@@ -69,10 +69,8 @@ class BatchDownloader:
 
             api_client = random.choice(self.api_clients)
 
-            log.debug('processing block at {} [{} remaining, {} unique harvesters]'.format(
-                height,
-                self.max_height - height,
-                len(self.public_key_to_descriptor_map)))
+            num_unique_harvesters = len(self.public_key_to_descriptor_map)
+            log.debug(f'processing block at {height} [{self.max_height - height} remaining, {num_unique_harvesters} unique harvesters]')
             signer_public_key = api_client.get_harvester_signer_public_key(height)
 
             with self.lock:
@@ -84,7 +82,7 @@ class BatchDownloader:
             signer_address = self.facade.network.public_key_to_address(PublicKey(signer_public_key))
             (main_address, main_public_key, balance) = self._get_balance_follow_links(api_client, signer_address)
 
-            log.debug('signer {} is linked to {} with balance {}'.format(signer_address, main_address, balance))
+            log.debug(f'signer {signer_address} is linked to {main_address} with balance {balance}')
 
             descriptor = HarvesterDescriptor()
             descriptor.signer_public_key = signer_public_key
@@ -119,12 +117,12 @@ class HarvesterDownloader:
     def download(self, thread_count, output_filepath):
         self.peers_map = self._build_peers_map()
 
-        log.info('downloading harvester activity to {} for last {} blocks'.format(output_filepath, self.num_blocks))
+        log.info(f'downloading harvester activity to {output_filepath} for last {self.num_blocks} blocks')
 
         batch_downloader = BatchDownloader(self.resources, thread_count)
         batch_downloader.download_all(self.num_blocks)
 
-        with open(output_filepath, 'w') as outfile:
+        with open(output_filepath, 'wt', encoding='utf8') as outfile:
             column_names = ['signer_address', 'main_address', 'host', 'name', 'height', 'finalized_height', 'version', 'balance']
             csv_writer = csv.DictWriter(outfile, column_names)
             csv_writer.writeheader()

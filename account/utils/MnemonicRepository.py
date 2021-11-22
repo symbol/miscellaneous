@@ -31,7 +31,7 @@ class MnemonicRepository:
         actual_address = facade.network.public_key_to_address(child_key_pair.public_key)
 
         if expected_address != actual_address:
-            raise Exception('{}: EXPECTED {} ACTUAL {}'.format(identifier, expected_address, actual_address))
+            raise Exception(f'{identifier}: EXPECTED {expected_address} ACTUAL {actual_address}')
 
         return child_key_pair
 

@@ -14,14 +14,14 @@ class TransactionsLoader():
         self.ticker = ticker
         self.currency = currency
 
-        self.price_map = dict()
+        self.price_map = {}
         self.transaction_snapshots = []
 
     def load_price_map(self):
-        filename = '{}_{}.csv'.format(self.ticker, self.currency)
-        log.info('loading price map from {}'.format(filename))
+        filename = f'{self.ticker}_{self.currency}.csv'
+        log.info(f'loading price map from {filename}')
 
-        with open(self.directory / filename, 'r') as infile:
+        with open(self.directory / filename, 'rt', encoding='utf8') as infile:
             csv_reader = csv.DictReader(infile)
 
             for row in csv_reader:
@@ -32,9 +32,9 @@ class TransactionsLoader():
                 self.price_map[snapshot.date] = snapshot
 
     def load(self, filename):
-        log.info('loading transactions from {}'.format(filename))
+        log.info(f'loading transactions from {filename}')
 
-        with open(self.directory / filename, 'r') as infile:
+        with open(self.directory / filename, 'rt', encoding='utf8') as infile:
             csv_reader = csv.DictReader(infile)
 
             for row in csv_reader:
@@ -59,7 +59,7 @@ class TransactionsLoader():
             comments.append(price_snapshot.comments)
 
         if 0 == price_snapshot.price:
-            comments.append('detected zero price for {}'.format(snapshot.timestamp))
+            comments.append(f'detected zero price for {snapshot.timestamp}')
             log.warn(comments[-1])
 
         snapshot.comments = '\n'.join(comments)
@@ -80,18 +80,18 @@ class TransactionsLoader():
             snapshot.tag = 'fee only'
 
     def save(self, filename):
-        log.info('saving merged report to {}'.format(filename))
+        log.info(f'saving merged report to {filename}')
 
         self.transaction_snapshots.sort(key=lambda snapshot: snapshot.timestamp)
 
-        with open(filename, 'w', newline='') as outfile:
+        with open(filename, 'wt', newline='', encoding='utf8') as outfile:
             field_names = MERGER_FIELD_NAMES
             column_headers = field_names[:1] + [
-                '{}_amount'.format(self.currency),
-                '{}_fee_paid'.format(self.currency),
-                '{}_amount'.format(self.ticker),
-                '{}_fee_paid'.format(self.ticker),
-                '{}/{}'.format(self.ticker, self.currency)
+                f'{self.currency}_amount',
+                f'{self.currency}_fee_paid',
+                f'{self.ticker}_amount',
+                f'{self.ticker}_fee_paid',
+                f'{self.ticker}/{self.currency}'
             ] + field_names[6:]
 
             csv_writer = csv.DictWriter(outfile, field_names, extrasaction='ignore')
