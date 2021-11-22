@@ -18,7 +18,7 @@ class AccountInfo:
         self.address = None
         self.vested_balance = 0
         self.balance = 0
-        self.public_key = ''
+        self.public_key = None
         self.importance = 0.0
         self.harvested_blocks = 0
 
@@ -41,7 +41,7 @@ class NemClient:
 
     def get_harvester_signer_public_key(self, height):
         json_response = self._post_json('block/at/public', {'height': height})
-        return json_response['signer']
+        return PublicKey(json_response['signer'])
 
     def get_node_info(self):
         json_response = self._get_json('node/info')
@@ -62,7 +62,7 @@ class NemClient:
         account_info.address = Address(json_account['address'])
         account_info.vested_balance = json_account['vestedBalance'] / MICROXEM_PER_XEM
         account_info.balance = json_account['balance'] / MICROXEM_PER_XEM
-        account_info.public_key = json_account['publicKey']
+        account_info.public_key = PublicKey(json_account['publicKey']) if json_account['publicKey'] else None
         account_info.importance = json_account['importance']
         account_info.harvested_blocks = json_account['harvestedBlocks']
 

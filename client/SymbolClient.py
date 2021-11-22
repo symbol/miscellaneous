@@ -43,7 +43,7 @@ class AccountInfo:
     def __init__(self):
         self.address = None
         self.balance = 0
-        self.public_key = ''
+        self.public_key = None
         self.importance = 0.0
 
         self.remote_status = None
@@ -128,7 +128,7 @@ class SymbolPeerClient:
         node_info = {}
 
         node_info['version'] = reader.read_int(4)
-        node_info['publicKey'] = str(PublicKey(reader.read_bytes(32)))
+        node_info['publicKey'] = PublicKey(reader.read_bytes(32))
         node_info['networkGenerationHashSeed'] = str(Hash256(reader.read_bytes(32)))
         node_info['roles'] = reader.read_int(4)
         node_info['port'] = reader.read_int(2)
@@ -168,7 +168,7 @@ class SymbolClient:
 
     def get_harvester_signer_public_key(self, height):
         json_response = self._get_json(f'blocks/{height}')
-        return json_response['block']['signerPublicKey']
+        return PublicKey(json_response['block']['signerPublicKey'])
 
     def get_node_info(self):
         json_response = self._get_json('node/info')
@@ -208,21 +208,21 @@ class SymbolClient:
         if xym_mosaic:
             account_info.balance = int(xym_mosaic['amount']) / MICROXYM_PER_XYM
 
-        account_info.public_key = json_account['publicKey']
+        account_info.public_key = PublicKey(json_account['publicKey'])
         account_info.importance = float(json_account['importance']) / (9 * 10 ** 15 - 1)
 
         account_info.remote_status = ['Unlinked', 'Main', 'Remote', 'Remote_Unlinked'][json_account['accountType']]
 
         json_supplemental_public_keys = json_account['supplementalPublicKeys']
         if 'linked' in json_supplemental_public_keys:
-            account_info.linked_public_key = json_supplemental_public_keys['linked']['publicKey']
+            account_info.linked_public_key = PublicKey(json_supplemental_public_keys['linked']['publicKey'])
 
         if 'voting' in json_supplemental_public_keys:
             account_info.voting_public_keys = [
                 VotingPublicKey(
                     json_voting_public_key['startEpoch'],
                     json_voting_public_key['endEpoch'],
-                    json_voting_public_key['publicKey'])
+                    PublicKey(json_voting_public_key['publicKey']))
                 for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']
             ]
 
@@ -235,7 +235,7 @@ class SymbolClient:
         for json_message_group in json_response['messageGroups']:
             stage = 'PRECOMMIT' if 1 == json_message_group['stage'] else 'PREVOTE'
             for json_signature in json_message_group['signatures']:
-                voting_public_key = json_signature['root']['parentPublicKey']
+                voting_public_key = PublicKey(json_signature['root']['parentPublicKey'])
                 if voting_public_key not in voters_map:
                     voters_map[voting_public_key] = []
 

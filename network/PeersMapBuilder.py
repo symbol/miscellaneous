@@ -1,6 +1,7 @@
 import json
 from collections import namedtuple
 
+from symbolchain.core.CryptoTypes import PublicKey
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client
@@ -34,7 +35,7 @@ class PeersMapBuilder:
 
     def _build_peers_map_from_json(self, json_peers):
         for json_node in json_peers:
-            public_key = self._get_public_key(json_node)
+            public_key = PublicKey(self._get_public_key(json_node))
             self.peers_map[public_key] = self._create_node_descriptor(json_node)
 
     def _get_public_key(self, json_node):

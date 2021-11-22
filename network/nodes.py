@@ -85,17 +85,17 @@ class NodeDownloader:
                         json_node['identity']['node-public-key'] = json_node['identity']['public-key']
                         json_node['identity']['public-key'] = main_account_info.public_key
 
-                    main_public_key = json_node['identity']['public-key']
+                    main_public_key = PublicKey(json_node['identity']['public-key'])
                 else:
                     network = NetworkLocator.find_by_identifier(SymbolNetwork.NETWORKS, json_node['networkIdentifier'])
 
-                    main_public_key = json_node['publicKey']
+                    main_public_key = PublicKey(json_node['publicKey'])
 
                 is_reachable = True
 
                 json_peers = api_client.get_peers()
 
-                main_account_info = strong_api_client.get_account_info(network.public_key_to_address(PublicKey(main_public_key)))
+                main_account_info = strong_api_client.get_account_info(network.public_key_to_address(main_public_key))
 
                 json_node['extraData']['balance'] = main_account_info.balance if main_account_info else 0
                 json_node['extraData']['height'] = api_client.get_chain_height()
@@ -148,9 +148,21 @@ class NodeDownloader:
                 self.remaining_api_clients.append(peer_api_client)
 
     def save(self, output_filepath):
+        class PublicKeyAwareEncoder(json.JSONEncoder):
+            def default(self, o):
+                if isinstance(o, PublicKey):
+                    return str(o)
+
+                return json.JSONEncoder.default(self, o)
+
         log.info(f'saving nodes json to {output_filepath}')
         with open(output_filepath, 'wt', encoding='utf8') as outfile:
-            json.dump(list(self.public_key_to_node_info_map.values()), outfile, indent=2, sort_keys='identity.name')
+            json.dump(
+                list(self.public_key_to_node_info_map.values()),
+                outfile,
+                indent=2,
+                sort_keys='identity.name',
+                cls=PublicKeyAwareEncoder)
 
 
 def main():

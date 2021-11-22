@@ -4,7 +4,6 @@ import random
 import time
 from threading import Lock, Thread
 
-from symbolchain.core.CryptoTypes import PublicKey
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_facade, load_resources, locate_blockchain_client_class
@@ -79,7 +78,7 @@ class BatchDownloader:
 
                 self.public_key_to_descriptor_map[signer_public_key] = None
 
-            signer_address = self.facade.network.public_key_to_address(PublicKey(signer_public_key))
+            signer_address = self.facade.network.public_key_to_address(signer_public_key)
             (main_address, main_public_key, balance) = self._get_balance_follow_links(api_client, signer_address)
 
             log.debug(f'signer {signer_address} is linked to {main_address} with balance {balance}')
@@ -100,7 +99,7 @@ class BatchDownloader:
         if 'REMOTE' == account_info.remote_status:  # nem
             account_info = api_client.get_account_info(address, forwarded=True)
         if 'Remote' == account_info.remote_status:  # symbol
-            main_address = self.facade.network.public_key_to_address(PublicKey(account_info.linked_public_key))
+            main_address = self.facade.network.public_key_to_address(account_info.linked_public_key)
             account_info = api_client.get_account_info(main_address)
 
         return (account_info.address, account_info.public_key, account_info.balance)
