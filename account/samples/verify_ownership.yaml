@@ -10,6 +10,7 @@ mnemonics:
 tests:
   - blockchain: { name: nem, network: mainnet }
     mnemonic: alpaca
+    export_directory: ./_generated/nem
     accounts:
       - { identifier: 0, public_key: 4AA3AA159A6417C8986282F4D4D217D4F463298D4E672E16BFC2C271EDA1A954 }
       - { identifier: 1, public_key: 27A0DCF3D52B31790C91180C7596523CC3121A0CF0C39C6D7D3BDAEA3022C755 }
@@ -21,6 +22,7 @@ tests:
 
   - blockchain: { name: symbol, network: mainnet }
     mnemonic: alpaca
+    export_directory: ./_generated/symbol
     accounts:
       - { identifier: 0, public_key: 9A1004C994F644752F5B98E0E6A4E06DBCCF94CE0D46A00720D1DF3A57B781D9 }
       - { identifier: 1, public_key: 3899E0E128521E4F419DFB03A13A4E53ED37CC5781045E8BA3417A470A175250 }

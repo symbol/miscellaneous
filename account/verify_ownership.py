@@ -1,7 +1,10 @@
 import argparse
 import sys
+from pathlib import Path
 
 import yaml
+from symbolchain.core.PrivateKeyStorage import PrivateKeyStorage
+from zenlog import log
 
 from .utils.facade_utils import BlockchainDescriptor, create_blockchain_facade
 from .utils.MnemonicRepository import MnemonicRepository
@@ -37,9 +40,27 @@ def process_group(mnemonic_repository, group_dict):
     return (num_matches, num_failures)
 
 
+def save_group(mnemonic_repository, group_dict):
+    facade = create_blockchain_facade(BlockchainDescriptor(**group_dict['blockchain']))
+
+    export_directory = group_dict['export_directory']
+    Path(export_directory).mkdir(parents=True)
+
+    private_key_storage = PrivateKeyStorage(export_directory)
+    log.info(f'exporting private keys to {export_directory}')
+
+    for account_dict in group_dict['accounts']:
+        identifier = int(account_dict['identifier'])
+        child_key_pair = mnemonic_repository.derive_child_key_pair(facade, group_dict['mnemonic'], identifier)
+        address = facade.network.public_key_to_address(child_key_pair.public_key)
+
+        private_key_storage.save(str(address), child_key_pair.private_key)
+
+
 def main():
     parser = argparse.ArgumentParser(description='verifies account derivations from a BIP32 seed and passphrase')
     parser.add_argument('--input', help='input file with information about accounts to verify', required=True)
+    parser.add_argument('--allow-export', help='explicitly allows private keys to be exported as PEM files',  action='store_true')
     args = parser.parse_args()
 
     num_total_matches = 0
@@ -57,10 +78,17 @@ def main():
             message_prefix = 'SUCCESS' if 0 == num_failures else 'FAILURE'
             num_total_tests = num_matches + num_failures
             print_conditional_message(f'{message_prefix} {num_matches}/{num_total_tests}', 0 == num_failures)
-            print()
 
             num_total_matches += num_matches
             num_total_failures += num_failures
+
+            if 'export_directory' in group_dict:
+                if not args.allow_export:
+                    log.warning('export directory detected but --allow-export not set')
+                elif not num_failures:
+                    save_group(mnemonic_repository, group_dict)
+
+            print()
 
     print_conditional_message(f'{num_total_matches} MATCHES, {num_total_failures} FAILURES', 0 == num_total_failures)
     sys.exit(num_total_failures)
