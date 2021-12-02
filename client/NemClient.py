@@ -72,7 +72,7 @@ class NemClient:
     def get_historical_balance(self, address, height):
         rest_path = f'account/historical/get?address={address}&startHeight={height}&endHeight={height}&increment=1'
         json_response = self._get_json(rest_path)
-        return float(json_response['data'][0]['balance']) / MICROXEM_PER_XEM
+        return 0 if not json_response['data'] else float(json_response['data'][0]['balance']) / MICROXEM_PER_XEM
 
     def get_harvests(self, address, start_id=None):
         json_response = self._get_account_page('harvests', address, start_id)
