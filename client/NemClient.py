@@ -1,4 +1,4 @@
-from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.core.CryptoTypes import Hash256, PublicKey
 from symbolchain.core.nem.Network import Address, Network
 from symbolchain.core.nem.NetworkTimestamp import NetworkTimestamp
 
@@ -14,8 +14,10 @@ TRANSACTION_TYPES = {
 
 
 class AccountInfo:
-    def __init__(self):
-        self.address = None
+    def __init__(self, address):
+        self.address = address
+        self.address_name = address
+
         self.vested_balance = 0
         self.balance = 0
         self.public_key = None
@@ -43,6 +45,16 @@ class NemClient:
         json_response = self._post_json('block/at/public', {'height': height})
         return PublicKey(json_response['signer'])
 
+    def get_block_hash(self, height):
+        # due to limitation in NEM REST API, we need to query next block to get current block hash
+        # as a result, newest block hash will be unknown
+        json_response = self._post_json('block/at/public', {'height': height+1})
+
+        if 'error' in json_response:
+            raise Exception(str(json_response))
+
+        return Hash256(json_response['prevBlockHash']['data']) if 'prevBlockHash' in json_response else None
+
     def get_node_info(self):
         json_response = self._get_json('node/info')
         return json_response
@@ -58,8 +70,7 @@ class NemClient:
         json_account = json_response['account']
         json_meta = json_response['meta']
 
-        account_info = AccountInfo()
-        account_info.address = Address(json_account['address'])
+        account_info = AccountInfo(Address(json_account['address']))
         account_info.vested_balance = json_account['vestedBalance'] / MICROXEM_PER_XEM
         account_info.balance = json_account['balance'] / MICROXEM_PER_XEM
         account_info.public_key = PublicKey(json_account['publicKey']) if json_account['publicKey'] else None
@@ -85,6 +96,7 @@ class NemClient:
             snapshot.amount = int(json_harvest['totalFee']) / MICROXEM_PER_XEM
             snapshot.height = int(json_harvest['height'])
             snapshot.collation_id = int(json_harvest['id'])
+            snapshot.hash = self.get_block_hash(snapshot.height)
             snapshots.append(snapshot)
 
         return snapshots
@@ -110,7 +122,7 @@ class NemClient:
             snapshot.fee_paid = fee_microxem / MICROXEM_PER_XEM
             snapshot.height = int(json_meta['height'])
             snapshot.collation_id = json_meta['id']
-            snapshot.hash = json_meta['hash']['data']
+            snapshot.hash = Hash256(json_meta['hash']['data'])
             snapshots.append(snapshot)
 
         return snapshots

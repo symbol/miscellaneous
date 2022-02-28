@@ -19,7 +19,7 @@ class ChainActivityDownloader:
         log.info(f'[{output_filepath}] downloading chain activity from {start_date} to {end_date}')
 
         with open(output_filepath, 'wt', encoding='utf8') as outfile:
-            column_names = ['timestamp', 'amount', 'fee_paid', 'height', 'address', 'tag', 'comments', 'hash']
+            column_names = ['timestamp', 'amount', 'fee_paid', 'height', 'address', 'address_name', 'tag', 'comments', 'hash']
             csv_writer = csv.DictWriter(outfile, column_names, extrasaction='ignore')
             csv_writer.writeheader()
 
@@ -50,7 +50,7 @@ class ChainActivityDownloader:
                 if snapshot.timestamp.date() > end_date:
                     continue
 
-                snapshot.address = self.account_descriptor.name
+                snapshot.address_name = self.account_descriptor.name
                 csv_writer.writerow(vars(snapshot))
                 num_rows_written += 1
 

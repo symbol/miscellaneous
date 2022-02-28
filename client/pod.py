@@ -22,6 +22,7 @@ class TransactionSnapshot():
 
     def __init__(self, address, tag):
         self.address = address
+        self.address_name = address
         self.tag = tag
 
         self.timestamp = None

@@ -20,7 +20,8 @@ VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'pu
 
 XYM_NETWORK_MOSAIC_IDS_MAP = {
     0x68: '6BED913FA20223F8',
-    0x98: 'E74B99BA41F4AFEE'
+    0x98: '3A8416DB2D53B6C8',
+    'alias': 'E74B99BA41F4AFEE'
 }
 
 MICROXYM_PER_XYM = 1000000.0
@@ -40,8 +41,10 @@ TRANSACTION_TYPES = {
 
 
 class AccountInfo:
-    def __init__(self):
-        self.address = None
+    def __init__(self, address):
+        self.address = address
+        self.address_name = address
+
         self.balance = 0
         self.public_key = None
         self.importance = 0.0
@@ -198,8 +201,7 @@ class SymbolClient:
 
     @staticmethod
     def _parse_account_info(json_account, mosaic_id=None):
-        account_info = AccountInfo()
-        account_info.address = Address(unhexlify(json_account['address']))
+        account_info = AccountInfo(Address(unhexlify(json_account['address'])))
 
         if not mosaic_id:
             mosaic_id = XYM_NETWORK_MOSAIC_IDS_MAP[account_info.address.bytes[0]]
@@ -252,7 +254,7 @@ class SymbolClient:
 
             snapshot = TransactionSnapshot(address, 'harvest')
             snapshot.height = int(json_statement['height'])
-            snapshot.timestamp = self._get_block_time_and_multiplier(snapshot.height)[0]
+            (snapshot.timestamp, _, snapshot.hash) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
 
             for json_receipt in json_statement['receipts']:
                 receipt_type = json_receipt['type']
@@ -279,7 +281,7 @@ class SymbolClient:
 
             snapshot = TransactionSnapshot(address, 'transfer')
             snapshot.height = int(json_meta['height'])
-            (snapshot.timestamp, fee_multiplier) = self._get_block_time_and_multiplier(snapshot.height)
+            (snapshot.timestamp, fee_multiplier, _) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
 
             snapshot.hash = json_meta['hash']
             (amount_microxym, fee_microxym) = self._process_xym_changes(snapshot, json_transaction, snapshot.hash, fee_multiplier)
@@ -328,7 +330,7 @@ class SymbolClient:
                 direction = 1
 
             for json_mosaic in json_transaction['mosaics']:
-                if json_mosaic['id'] == XYM_NETWORK_MOSAIC_IDS_MAP[Address(address).bytes[0]]:
+                if json_mosaic['id'] in (XYM_NETWORK_MOSAIC_IDS_MAP[Address(address).bytes[0]], XYM_NETWORK_MOSAIC_IDS_MAP['alias']):
                     amount_microxym += int(json_mosaic['amount']) * direction
 
         return amount_microxym
@@ -345,10 +347,13 @@ class SymbolClient:
     def _is_aggregate(transaction_type):
         return any(TRANSACTION_TYPES[name] == transaction_type for name in ['aggregate_complete', 'aggregate_bonded'])
 
-    def _get_block_time_and_multiplier(self, height):
+    def _get_block_time_and_multiplier_and_hash(self, height):
         json_block_and_meta = self._get_json(f'blocks/{height}')
         json_block = json_block_and_meta['block']
-        return (NetworkTimestamp(int(json_block['timestamp'])).to_datetime(), json_block['feeMultiplier'])
+        return (
+            NetworkTimestamp(int(json_block['timestamp'])).to_datetime(),
+            json_block['feeMultiplier'],
+            Hash256(json_block_and_meta['meta']['hash']))
 
     def _get_page(self, rest_path, start_id):
         return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')

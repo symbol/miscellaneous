@@ -21,11 +21,11 @@ class TimeoutHTTPAdapter(requests.adapters.HTTPAdapter):
 
 def create_http_session(**kwargs):
     retries = Retry(
-        total=kwargs.get('retry_count', 7),
+        total=kwargs.get('retry_count', 20),
         backoff_factor=1,
         status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=['GET'] if not kwargs.get('retry_post', False) else ['GET', 'POST'])
-    adapter = TimeoutHTTPAdapter(max_retries=retries, timeout=kwargs.get('timeout', 10))
+        allowed_methods=['GET', 'POST'] if not kwargs.get('retry_post', False) else ['GET', 'POST'])
+    adapter = TimeoutHTTPAdapter(max_retries=retries, timeout=kwargs.get('timeout', 30))
 
     http = requests.Session()
     http.mount('http://', adapter)
