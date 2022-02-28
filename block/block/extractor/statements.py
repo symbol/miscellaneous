@@ -5,17 +5,8 @@ import struct
 
 from tqdm import tqdm
 
-from block.extractor.format import (
-    ADDRESS_RESOLUTION_FORMAT,
-    ADDRESS_RESOLUTION_LEN,
-    DB_OFFSET_BYTES,
-    MOSAIC_RESOLUTION_FORMAT,
-    MOSAIC_RESOLUTION_LEN,
-    RECEIPT_FORMAT,
-    RECEIPT_LEN,
-    RECEIPT_SOURCE_FORMAT,
-    RECEIPT_SOURCE_LEN
-)
+from block.extractor.format import (ADDRESS_RESOLUTION_FORMAT, ADDRESS_RESOLUTION_LEN, DB_OFFSET_BYTES, MOSAIC_RESOLUTION_FORMAT,
+                                    MOSAIC_RESOLUTION_LEN, RECEIPT_FORMAT, RECEIPT_LEN, RECEIPT_SOURCE_FORMAT, RECEIPT_SOURCE_LEN)
 from block.extractor.util import encode_address, fmt_unpack
 
 

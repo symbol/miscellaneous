@@ -1,17 +1,8 @@
 import struct
 from binascii import hexlify, unhexlify
 
-from block.extractor.format import (
-    EMBED_TX_H_FORMAT,
-    EMBED_TX_H_LEN,
-    FOOTER_FORMAT,
-    FOOTER_LEN,
-    HEADER_FORMAT,
-    IMPORTANCE_FOOTER_FORMAT,
-    IMPORTANCE_FOOTER_LEN,
-    TX_H_FORMAT,
-    TX_H_LEN
-)
+from block.extractor.format import (EMBED_TX_H_FORMAT, EMBED_TX_H_LEN, FOOTER_FORMAT, FOOTER_LEN, HEADER_FORMAT, IMPORTANCE_FOOTER_FORMAT,
+                                    IMPORTANCE_FOOTER_LEN, TX_H_FORMAT, TX_H_LEN)
 from block.extractor.util import encode_address, fmt_unpack, public_key_to_address
 
 
