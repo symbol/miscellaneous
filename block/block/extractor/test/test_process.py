@@ -14,8 +14,14 @@ def test_get_tx_stats(fixture_block, fixture_tx_stats):
             assert fix_txn[key] == value
 
 
-def test_decode_msgpack(fixture_packed_data):
-    return False
+def test_decode_msgpack(fixture_parsed_footer,fixture_packed_footer):
+    decoded = decode_msgpack(fixture_packed_footer)
+    for key, value in decoded:
+        # should recurse for transactions list?
+        # if key == 'transactions':
+        #     for txn, fix_txn in zip(value, fixture_parsed_footer[key]):
+        #         pass
+        assert fixture_parsed_footer[key] == value
 
 
 # def test_main():

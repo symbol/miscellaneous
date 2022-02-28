@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 import pytest
+import msgpack
 
 # TODO: maybe better to build raw fixtures by re-encoding parsed fixtures?
 # TODO: fixtures need to cover all tx types, payload variations
@@ -46,6 +47,11 @@ def fixture_raw_footer():
 
 
 @pytest.fixture
+def fixture_packed_footer():
+    return msgpack.unpack(open('./fixture_data/footer.msgpack', 'rb'), raw=True)
+
+
+@pytest.fixture
 def fixture_parsed_footer():
     return {
         'reserved': 0,
@@ -79,11 +85,6 @@ def fixture_parsed_footer():
                 }
             }]
         }
-
-
-@pytest.fixture
-def fixture_raw_payload():
-    pass
 
 
 @pytest.fixture
