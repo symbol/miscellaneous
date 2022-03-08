@@ -43,7 +43,6 @@ class TransactionsLoader():
                 snapshot = client.pod.AugmentedTransactionSnapshot()
                 snapshot.__dict__.update(row)
                 raw_timestamp = snapshot.timestamp
-
                 snapshot.fix_types()
 
                 price_snapshot = self.price_map[snapshot.timestamp.date()]
@@ -123,12 +122,12 @@ def main():
     parser.add_argument('--ticker', help='ticker symbol', default='nem')
     parser.add_argument('--currency', help='fiat currency', default='usd')
     parser.add_argument('--human-readable', help='outputs a more human readable format', action='store_true')
-
     args = parser.parse_args()
+
     transactions_loader = TransactionsLoader(args.input, args.ticker, args.currency, args.human_readable)
     transactions_loader.load_price_map()
 
-    for filepath in Path(args.input).iterdir():
+    for filepath in Path(args.input).glob('**/*.csv'):
         if not filepath.name.startswith(args.ticker):
             transactions_loader.load(filepath.name)
 
