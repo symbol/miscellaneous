@@ -1,6 +1,9 @@
 # pylint: disable=redefined-outer-name
+import argparse
 import pytest
 import msgpack
+
+from block.extractor.format import DB_OFFSET_BYTES
 
 # TODO: maybe better to build raw fixtures by re-encoding parsed fixtures?
 # TODO: fixtures need to cover all tx types, payload variations
@@ -150,3 +153,35 @@ def fixture_tx_stats():
             'message': '681d3777a258c3687286e7e2b1159350f27a5f4b317354fc0000010000000000f82302a23f91ed6ba085f20500000000'
         }
     ]
+
+
+@pytest.fixture
+def fixture_extract_args():
+    args = argparse.Namespace()
+    args.input = './fixture_data'
+    args.output = './fixture_data/test_output'
+    args.block_save_path = 'block_data.msgpack'
+    args.statement_save_path = 'stmt_data.msgpack'
+    args.state_save_path = 'state_map.msgpack'
+    args.header_save_path = 'block_header_df.csv'
+    args.block_extension = '.dat'
+    args.statement_extension = '.stmt'
+    args.db_offset_bytes = DB_OFFSET_BYTES
+    args.save_tx_hashes = True
+    args.save_subcache_merkle_roots = True
+    args.quiet = False
+    args.stream = False
+    return args
+
+
+@pytest.fixture
+def fixture_process_args():
+    args = argparse.Namespace()
+    args.input = './fixture_data/block_data.msgpack'
+    args.output = './fixture_data/test_output'
+    args.header_save_path = 'block_headers.csv'
+    args.tx_save_path = 'transactions.csv'
+    args.total = 100.0
+    args.append = False
+    args.quiet = False
+    return args

@@ -110,6 +110,7 @@ def main(args):
     print('statement data extraction complete!\n')
     print(f'statement data written to {os.path.join(args.output,args.statement_save_path)}')
 
+    # TODO: remove header output now that it is redundant with the process script?
     header_df = pd.DataFrame.from_records([get_block_stats(x) for x in blocks])
     header_df['dateTime'] = pd.to_datetime(header_df['timestamp'], origin=pd.to_datetime('2021-03-16 00:06:25'), unit='ms')
     header_df = header_df.set_index('dateTime').sort_index(axis=0)
@@ -198,7 +199,7 @@ def main_stream(args):
                 for stmt in stmts['transaction_statements']:
                     for rcpt in stmt['receipts']:
                         state_map.insert_rcpt(rcpt, height)
-                statement_store.write(packer.pack((s_height, stmts,)))
+                statement_store.write(packer.pack((s_height, stmts)))
                 try:
                     s_height, stmts, _ = next(statements_)
                 except StopIteration:
