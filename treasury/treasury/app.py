@@ -7,7 +7,8 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from data import get_gecko_spot, lookup_balance
 
-from callbacks import update_summary, update_prices, update_price_chart, update_forecast_chart
+from callbacks import (update_summary, update_prices, update_price_chart, update_forecast_chart, download_full_prices,
+                       download_full, download_small_prices, download_small)
 
 # defaults for startup
 START_DATE = '2021-12-01'
@@ -124,6 +125,10 @@ def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, 
                     ],
                     className='mb-3',
                 ),
+                dcc.Download(id='download-small-dataframe'),
+                dcc.Download(id='download-full-dataframe'),
+                dcc.Download(id='download-small-prices'),
+                dcc.Download(id='download-full-prices'),
                 ],
                 className='col-lg-4 col-md-12',
             ),
@@ -148,9 +153,37 @@ def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, 
         dcc.Store(id='ref-prices', data=prices.to_json(date_format='iso', orient='split')),
         dcc.Store(id='lookback-prices', data=lookback_prices.to_json(date_format='iso', orient='split')),
         dcc.Store(id='asset-values', data=asset_values),
+        dcc.Store(id='full-prices'),
+        dcc.Store(id='small-prices'),
+        dcc.Store(id='full-sims'),
+        dcc.Store(id='small-sims'),
     ], fluid=True)
 
     # TODO: spot updates should trigger every minute
+
+    app.callback(
+        Output('download-full-prices', 'data'),
+        Input('price-button-full', 'n_clicks'),
+        State('full-prices', 'data'),
+        prevent_initial_call=True)(download_full_prices)
+
+    app.callback(
+        Output('download-small-prices', 'data'),
+        Input('price-button-small', 'n_clicks'),
+        State('small-prices', 'data'),
+        prevent_initial_call=True)(download_small_prices)
+
+    app.callback(
+        Output('download-full-dataframe', 'data'),
+        Input('download-button-full', 'n_clicks'),
+        State('full-sims', 'data'),
+        prevent_initial_call=True)(download_full)
+
+    app.callback(
+        Output('download-small-dataframe', 'data'),
+        Input('download-button-small', 'n_clicks'),
+        State('small-sims', 'data'),
+        prevent_initial_call=True)(download_small)
 
     app.callback(
         Output('summary-table', 'children'),
@@ -167,6 +200,10 @@ def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, 
 
     app.callback(
         Output('forecast-graph', 'figure'),
+        Output('full-sims', 'data'),
+        Output('small-sims', 'data'),
+        Output('full-prices', 'data'),
+        Output('small-prices', 'data'),
         Input('lookback-prices', 'data'),
         Input('ref-ticker', 'value'),
         Input('forecast-days', 'value'),

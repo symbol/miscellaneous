@@ -3,10 +3,31 @@ import pandas as pd
 import plotly.graph_objects as go
 import tensorflow_probability as tfp
 
+from dash import dcc
 from data import get_gecko_spot, get_gecko_prices
 from models import get_mean_variance_forecasts
 
 tfd = tfp.distributions
+
+
+def download_full_prices(_, full_prices):
+    full_prices = pd.read_json(full_prices, orient='split')
+    return dcc.send_data_frame(full_prices.to_csv, 'simulated_prices.csv')
+
+
+def download_small_prices(_, small_prices):
+    small_prices = pd.read_json(small_prices, orient='split')
+    return dcc.send_data_frame(small_prices.to_csv, 'high_low_mid_prices.csv')
+
+
+def download_full(_, full_sims):
+    full_sims = pd.read_json(full_sims, orient='split')
+    return dcc.send_data_frame(full_sims.to_csv, 'full_simulations.csv')
+
+
+def download_small(_, small_sims):
+    small_sims = pd.read_json(small_sims, orient='split')
+    return dcc.send_data_frame(small_sims.to_csv, 'high_low_mid_simulations.csv')
 
 
 def update_summary(lookback_prices, ref_ticker):
@@ -49,7 +70,7 @@ def update_prices(
         new_prices = pd.concat(new_prices, axis=1)
         ref_prices = pd.concat([ref_prices, new_prices], axis=0).sort_index().drop_duplicates()
 
-    # TODO: re-implement data persistence; avoid storing full data in app if possible
+    # TODO: re-implement data persistence; avoid storing full data in app if possible or set environment vars for location
     # if len(ref_prices) != price_len:
     #     ref_prices.to_csv(PRICE_DATA_LOC)
 
@@ -79,6 +100,12 @@ def update_forecast_chart(
         trend_scale=trend_scale,
         vol_scale=vol_scale,
         num_sims=num_sims)
+
+    historical_prices = lookback_prices[ref_ticker].copy()
+    forecast_prices = forecasts * lookback_prices[ref_ticker].iloc[-1]
+    price_quantiles = forecast_prices.quantile([(1-risk_threshold)/2, (1+risk_threshold)/2], axis=1).T
+    historical_prices = pd.concat([historical_prices, forecast_prices.quantile(0.5, axis=1).T], axis=0)
+    historical_prices.drop_duplicates(inplace=True)
 
     # TODO: add labels to all sims that show the quantile value at that point
     historical_value = lookback_prices.apply(lambda x: x*asset_values.get(x.name, 0)).sum(axis=1)
@@ -177,7 +204,22 @@ def update_forecast_chart(
     else:
         forecast_fig['data'] = forecast_traces
 
-    return forecast_fig
+    historical_value.name = 'Historical Value / Median Forecast'
+    forecast_quantiles.columns = [f'{float(quantile):.2%} risk level' for quantile in forecast_quantiles.columns]
+    historical_value = pd.concat([historical_value, forecast_quantiles], axis=1)
+    forecasts.columns = [f'Balance Sim {col}' for col in forecasts.columns]
+
+    historical_prices.name = f'Historical {ref_ticker} Price / Median Forecast'
+    price_quantiles.columns = [f'{float(quantile):.2%} {ref_ticker} Forecast' for quantile in price_quantiles.columns]
+    historical_prices = pd.concat([historical_prices, price_quantiles], axis=1)
+    forecast_prices.columns = [f'{ref_ticker} Price Sim {col}' for col in forecast_prices.columns]
+
+    return (
+        forecast_fig,
+        forecasts.to_json(date_format='iso', orient='split'),
+        historical_value.to_json(date_format='iso', orient='split'),
+        forecast_prices.to_json(date_format='iso', orient='split'),
+        historical_prices.to_json(date_format='iso', orient='split'))
 
 
 def update_price_chart(lookback_prices, price_fig):
