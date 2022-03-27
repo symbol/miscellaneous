@@ -7,7 +7,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from data import get_gecko_spot, lookup_balance
 
-from callbacks import (update_summary, update_prices, update_price_chart, update_forecast_chart, download_full_prices,
+from callbacks import (update_summary, get_update_prices, update_price_chart, update_forecast_chart, download_full_prices,
                        download_full, download_small_prices, download_small)
 
 # defaults for startup
@@ -19,23 +19,26 @@ REF_TICKER = 'XEM'
 THEME = dbc.themes.VAPOR
 TITLE = 'Symbol Treasury Analysis Tool v1.0'
 
-COLOR_DICT = {
-    'XEM': '#67b9e8',
-    'XYM': '#44004e',
-    'BTC': '#f7931a',
-    'ETH': '#373737'
-}
 
-# TODO: figure out how to automate chart colors from stylesheet
-
-
-def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, base_path):
+def get_app(price_data_loc, accounts_loc, serve, base_path):
 
     app = dash.Dash(__name__, serve_locally=serve, url_base_pathname=base_path, external_stylesheets=[THEME])
     app.title = TITLE
 
-    accounts = accounts.copy()
+    # prep data
+    prices = pd.read_csv(price_data_loc, header=0, index_col=0, parse_dates=True)
+    lookback_prices = prices.loc[START_DATE:END_DATE]
+
+    accounts = pd.read_csv(accounts_loc, header=0, index_col=None)
+    accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
+    asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
     accounts['Address'] = accounts['Address'].apply(lambda x: html.A(f'{x[:10]}...', href=f'https://symbol.fyi/accounts/{x}'))
+
+    summary_df = pd.DataFrame.from_records({
+        'Latest XYM Price': [f'${get_gecko_spot("XYM"):.4}'],
+        'Latest XEM Price': [f'${get_gecko_spot("XEM"):.4}'],
+        'Reference Trend (Daily)': [f'{prices[REF_TICKER].pct_change().mean():.3%}'],
+        'Reference Vol (Daily)': [f'{prices[REF_TICKER].pct_change().std():.3%}']})
 
     app.layout = dbc.Container([
         dbc.Row([html.H1(TITLE)], justify='center'),
@@ -159,8 +162,6 @@ def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, 
         dcc.Store(id='small-sims'),
     ], fluid=True)
 
-    # TODO: spot updates should trigger every minute
-
     app.callback(
         Output('download-full-prices', 'data'),
         Input('price-button-full', 'n_clicks'),
@@ -196,7 +197,7 @@ def get_app(prices, lookback_prices, summary_df, accounts, asset_values, serve, 
         Input('start-date', 'value'),
         Input('end-date', 'value'),
         State('ref-prices', 'data'),
-        State('lookback-prices', 'data'))(update_prices)
+        State('lookback-prices', 'data'))(get_update_prices(price_data_loc))
 
     app.callback(
         Output('forecast-graph', 'figure'),
@@ -239,22 +240,7 @@ def main():
     if args.end_date is None:
         args.end_date = pd.to_datetime('today').strftime('%Y-%m-%d')
 
-    # prep data
-    prices = pd.read_csv(args.price_data_loc, header=0, index_col=0, parse_dates=True)
-    lookback_prices = prices.loc[START_DATE:END_DATE]
-
-    # TODO: account values should be in app state, prices should be stored locally
-    accounts = pd.read_csv(args.accounts_loc, header=0, index_col=None)
-    accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
-    asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
-
-    summary_df = pd.DataFrame.from_records({
-        'Latest XYM Price': [f'${get_gecko_spot("XYM"):.4}'],
-        'Latest XEM Price': [f'${get_gecko_spot("XEM"):.4}'],
-        'Reference Trend (Daily)': [f'{prices[REF_TICKER].pct_change().mean():.3%}'],
-        'Reference Vol (Daily)': [f'{prices[REF_TICKER].pct_change().std():.3%}']})
-
-    app = get_app(prices, lookback_prices, summary_df, accounts, asset_values, args.serve, args.base_path)
+    app = get_app(args.price_data_loc, args.accounts_loc, args.serve, args.base_path)
     app.run_server(host=args.host, port=args.port, threaded=True, proxy=args.proxy, debug=True)
 
 

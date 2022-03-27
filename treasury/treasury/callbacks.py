@@ -11,26 +11,31 @@ tfd = tfp.distributions
 
 
 def download_full_prices(_, full_prices):
+    """Callback to feed the full price simulation download feature"""
     full_prices = pd.read_json(full_prices, orient='split')
     return dcc.send_data_frame(full_prices.to_csv, 'simulated_prices.csv')
 
 
 def download_small_prices(_, small_prices):
+    """Callback to feed the price simulation boundary download feature"""
     small_prices = pd.read_json(small_prices, orient='split')
     return dcc.send_data_frame(small_prices.to_csv, 'high_low_mid_prices.csv')
 
 
 def download_full(_, full_sims):
+    """Callback to feed the full simulation download feature"""
     full_sims = pd.read_json(full_sims, orient='split')
     return dcc.send_data_frame(full_sims.to_csv, 'full_simulations.csv')
 
 
 def download_small(_, small_sims):
+    """Callback to feed the simulation boundary download feature"""
     small_sims = pd.read_json(small_sims, orient='split')
     return dcc.send_data_frame(small_sims.to_csv, 'high_low_mid_simulations.csv')
 
 
 def update_summary(lookback_prices, ref_ticker):
+    """Callback that produces the headline summary table"""
     lookback_prices = pd.read_json(lookback_prices, orient='split')
     summary_dict = {
         'Latest XYM Price': [f'${get_gecko_spot("XYM"):.4}'],
@@ -41,42 +46,43 @@ def update_summary(lookback_prices, ref_ticker):
     return [dbc.Table.from_dataframe(pd.DataFrame.from_records(summary_dict), bordered=True, color='dark')]
 
 
-def update_prices(
-        start_date,
-        end_date,
-        ref_prices,
-        lookback_prices):
+def get_update_prices(price_data_loc):
+    """Wrapper to inject location dependency into price data callback"""
 
-    # TODO: progress bar when pulling API data?
-    ref_prices = pd.read_json(ref_prices, orient='split')
-    # price_len = len(ref_prices)
+    def update_prices(
+            start_date,
+            end_date,
+            ref_prices,
+            lookback_prices):
+        """Callback that slices price data and fetches new bars from coingecko as needed"""
 
-    start_date = pd.to_datetime(start_date).tz_localize('UTC')
-    end_date = pd.to_datetime(end_date).tz_localize('UTC')
+        ref_prices = pd.read_json(ref_prices, orient='split')
+        price_len = len(ref_prices)
 
-    # collect data if we don't already have what we need
-    # notify the user with an alert when we have to pull prices?
-    # could probably break this out into its own callback and add a loading bar, etc.
-    if start_date < ref_prices.index[0]:
-        new_prices = []
-        for asset in ref_prices.columns:
-            new_prices.append(get_gecko_prices(asset, start_date, ref_prices.index[0]-pd.Timedelta(days=1)))
-        new_prices = pd.concat(new_prices, axis=1)
-        ref_prices = pd.concat([new_prices, ref_prices], axis=0).sort_index().drop_duplicates()
-    if end_date > ref_prices.index[-1]:
-        new_prices = []
-        for asset in ref_prices.columns:
-            new_prices.append(get_gecko_prices(asset, ref_prices.index[-1]+pd.Timedelta(days=1), end_date))
-        new_prices = pd.concat(new_prices, axis=1)
-        ref_prices = pd.concat([ref_prices, new_prices], axis=0).sort_index().drop_duplicates()
+        start_date = pd.to_datetime(start_date).tz_localize('UTC')
+        end_date = pd.to_datetime(end_date).tz_localize('UTC')
 
-    # TODO: re-implement data persistence; avoid storing full data in app if possible or set environment vars for location
-    # if len(ref_prices) != price_len:
-    #     ref_prices.to_csv(PRICE_DATA_LOC)
+        if start_date < ref_prices.index[0]:
+            new_prices = []
+            for asset in ref_prices.columns:
+                new_prices.append(get_gecko_prices(asset, start_date, ref_prices.index[0]-pd.Timedelta(days=1)))
+            new_prices = pd.concat(new_prices, axis=1)
+            ref_prices = pd.concat([new_prices, ref_prices], axis=0).sort_index().drop_duplicates()
+        if end_date > ref_prices.index[-1]:
+            new_prices = []
+            for asset in ref_prices.columns:
+                new_prices.append(get_gecko_prices(asset, ref_prices.index[-1]+pd.Timedelta(days=1), end_date))
+            new_prices = pd.concat(new_prices, axis=1)
+            ref_prices = pd.concat([ref_prices, new_prices], axis=0).sort_index().drop_duplicates()
 
-    lookback_prices = ref_prices.loc[start_date:end_date]
+        if len(ref_prices) != price_len:
+            ref_prices.to_csv(price_data_loc)
 
-    return ref_prices.to_json(date_format='iso', orient='split'), lookback_prices.to_json(date_format='iso', orient='split')
+        lookback_prices = ref_prices.loc[start_date:end_date]
+
+        return ref_prices.to_json(date_format='iso', orient='split'), lookback_prices.to_json(date_format='iso', orient='split')
+
+    return update_prices
 
 
 def update_forecast_chart(
@@ -89,6 +95,7 @@ def update_forecast_chart(
         risk_threshold,
         forecast_fig,
         asset_values):
+    """Callback that runs forecasting algorithm, builds forecast chart, and returns simulations for export"""
 
     lookback_prices = pd.read_json(lookback_prices, orient='split')
 
@@ -107,7 +114,6 @@ def update_forecast_chart(
     historical_prices = pd.concat([historical_prices, forecast_prices.quantile(0.5, axis=1).T], axis=0)
     historical_prices.drop_duplicates(inplace=True)
 
-    # TODO: add labels to all sims that show the quantile value at that point
     historical_value = lookback_prices.apply(lambda x: x*asset_values.get(x.name, 0)).sum(axis=1)
     forecasts = forecasts * historical_value.iloc[-1]
     forecast_quantiles = forecasts.quantile([(1-risk_threshold)/2, (1+risk_threshold)/2], axis=1).T
@@ -223,6 +229,7 @@ def update_forecast_chart(
 
 
 def update_price_chart(lookback_prices, price_fig):
+    """Callback that builds and styles a chart containing asset returns"""
 
     lookback_prices = pd.read_json(lookback_prices, orient='split')
     lookback_returns = (lookback_prices.pct_change().fillna(0.0)+1).cumprod() - 1

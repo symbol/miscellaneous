@@ -1,6 +1,6 @@
 import time
 import os
-from datetime import date
+import datetime
 
 import pandas as pd
 import requests
@@ -37,7 +37,7 @@ def lookup_balance(address, asset):
     elif asset in ['nem', 'xem']:
         return lookup_xem_balance(address)
     else:
-        raise ValueError(f"Asset not supported: {asset}")
+        raise ValueError(f'Asset not supported: {asset}')
 
 
 def lookup_xym_balance(address):
@@ -54,19 +54,18 @@ def lookup_xym_balance(address):
 
 
 def lookup_xem_balance(address):
-  
     response = requests.get('http://' + XEM_API_HOST + ':7890/account/get?address=' + address).json()
     balance = float(response['account']['balance']) / 1000000
     return balance
 
 
-def get_cm_prices(ticker, datetime):
+def get_cm_prices(ticker, date_time):
 
     response = requests.get(
         'https://api.coinmetrics.io/v4/timeseries/asset-metrics?assets=' +
         ticker +
         '&start_time=' +
-        datetime +
+        date_time +
         '&limit_per_asset=1&metrics=PriceUSD&api_key=' + CM_KEY).json()
     ref_rate = response['data'][0]['PriceUSD']
     return ref_rate
@@ -74,10 +73,10 @@ def get_cm_prices(ticker, datetime):
 
 def get_cm_metrics(assets, metrics, start_time='2016-01-01', end_time=None, frequency='1d'):
     if end_time is None:
-        end_time = date.today()
+        end_time = datetime.date.today()
     data = []
     url = (
-        f'https://api.coinmetrics.io/v4/timeseries/asset-metrics?' +
+        'https://api.coinmetrics.io/v4/timeseries/asset-metrics?' +
         f'assets={",".join(assets)}&' +
         f'start_time={start_time}&' +
         f'end_time={end_time}&' +
@@ -85,10 +84,10 @@ def get_cm_metrics(assets, metrics, start_time='2016-01-01', end_time=None, freq
         f'frequency={frequency}&' +
         f'pretty=true&api_key={CM_KEY}')
     while True:
-        r = requests.get(url).json()
-        data.extend(r['data'])
-        if 'next_page_url' in r:
-            url = r['next_page_url']
+        response = requests.get(url).json()
+        data.extend(response['data'])
+        if 'next_page_url' in response:
+            url = response['next_page_url']
         else:
             break
     return data
@@ -107,7 +106,7 @@ def get_gecko_spot(ticker, currency='usd'):
         try:
             response = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=' + ticker + '&vs_currencies=' + currency).json()
             return response[ticker][currency]
-        except:
+        except (KeyError, requests.exceptions.RequestException) as _:
             time.sleep(RETRY_S)
             tries += 1
     return None
@@ -127,7 +126,7 @@ def get_gecko_price(ticker, date, currency='usd'):
             if 'name' in response and 'market_data' not in response:
                 return None
             return response['market_data']['current_price'][currency]
-        except:
+        except (KeyError, requests.exceptions.RequestException) as _:
             print(f'Failed to get gecko price {ticker} : {date} on try {tries}; retrying in {RETRY_S}s')
             time.sleep(RETRY_S)
             tries += 1
@@ -137,6 +136,6 @@ def get_gecko_price(ticker, date, currency='usd'):
 def get_gecko_prices(ticker, start_date, end_date, currency='usd'):
     dates = pd.date_range(start_date, end_date, freq='D')
     prices = {'date': dates, ticker: []}
-    for datetime in tqdm(dates):
-        prices[ticker].append(get_gecko_price(ticker, datetime.strftime('%d-%m-%Y'), currency))
+    for date_time in tqdm(dates):
+        prices[ticker].append(get_gecko_price(ticker, date_time.strftime('%d-%m-%Y'), currency))
     return pd.DataFrame.from_records(prices).set_index('date')
