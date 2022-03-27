@@ -11,12 +11,10 @@ import struct
 import sys
 
 import msgpack
-import pandas as pd
 from tqdm import tqdm
 
 from block.extractor.body import deserialize_footer, deserialize_header
 from block.extractor.format import DB_OFFSET_BYTES, HEADER_LEN, SUBCACHE_MERKLE_ROOT_FORMAT, TX_HASH_FORMAT, TX_HASH_LEN
-from block.extractor.process import get_block_stats
 from block.extractor.state import XYMStateMap
 from block.extractor.statements import deserialize_statements, get_statement_paths
 from block.extractor.util import fmt_unpack
@@ -109,14 +107,6 @@ def main(args):
 
     print('statement data extraction complete!\n')
     print(f'statement data written to {os.path.join(args.output,args.statement_save_path)}')
-
-    # TODO: remove header output now that it is redundant with the process script?
-    header_df = pd.DataFrame.from_records([get_block_stats(x) for x in blocks])
-    header_df['dateTime'] = pd.to_datetime(header_df['timestamp'], origin=pd.to_datetime('2021-03-16 00:06:25'), unit='ms')
-    header_df = header_df.set_index('dateTime').sort_index(axis=0)
-    header_df.to_csv(os.path.join(args.output, args.header_save_path))
-
-    print(f'header data written to {os.path.join(args.output,args.header_save_path)}')
 
     state_map.to_msgpack(os.path.join(args.output, args.state_save_path))
 
@@ -226,7 +216,6 @@ def parse_args(argv):
     parser.add_argument('--block_save_path', type=str, default='block_data.msgpack', help='file to write the extracted block data to')
     parser.add_argument('--statement_save_path', type=str, default='stmt_data.msgpack', help='file to write extracted statement data to')
     parser.add_argument('--state_save_path', type=str, default='state_map.msgpack', help='file to write the extracted chain state data to')
-    parser.add_argument('--header_save_path', type=str, default='block_header_df.csv', help='file to write the extracted data to')
     parser.add_argument('--block_extension', type=str, default='.dat', help='extension of block files; must be unique')
     parser.add_argument('--statement_extension', type=str, default='.stmt', help='extension of block files; must be unique')
     parser.add_argument('--db_offset_bytes', type=int, default=DB_OFFSET_BYTES, help='padding bytes at start of storage files')

@@ -10,11 +10,12 @@ def test_deserialize_header(fixture_raw_header, fixture_parsed_header):
 def test_deserialize_footer(fixture_raw_footer, fixture_parsed_header, fixture_parsed_footer):
     footer = deserialize_footer(fixture_raw_footer, fixture_parsed_header)
     for key, value in footer:
-        # should recurse for transactions list?
-        # if key == 'transactions':
-        #     for txn, fix_txn in zip(value, fixture_parsed_footer[key]):
-        #         pass
-        assert fixture_parsed_footer[key] == value
+        if key == 'transactions':
+            for txn, fix_txn in zip(value, fixture_parsed_footer[key]):
+                for txn_value, fix_txn_value in zip(txn.values(), fix_txn.values()):
+                    assert txn_value == fix_txn_value
+        else:
+            assert fixture_parsed_footer[key] == value
 
 
 def test_deserialize_tx_payload(fixture_parsed_payload):

@@ -5,9 +5,6 @@ import msgpack
 
 from block.extractor.format import DB_OFFSET_BYTES
 
-# TODO: maybe better to build raw fixtures by re-encoding parsed fixtures?
-# TODO: fixtures need to cover all tx types, payload variations
-
 
 @pytest.fixture
 def fixture_raw_header():
@@ -149,7 +146,7 @@ def fixture_tx_stats():
             'timestamp': 0,
             'recipient_address': 'NAOTO55CLDBWQ4UG47RLCFMTKDZHUX2LGFZVJ7A',
             'message_size': 0,
-            'mosaics': "[{'mosaic_id': 7777031834025731064, 'amount': 99780000}]",
+            'mosaics': '[{"mosaic_id": 7777031834025731064, "amount": 99780000}]',
             'message': '681d3777a258c3687286e7e2b1159350f27a5f4b317354fc0000010000000000f82302a23f91ed6ba085f20500000000'
         }
     ]
@@ -163,7 +160,6 @@ def fixture_extract_args():
     args.block_save_path = 'block_data.msgpack'
     args.statement_save_path = 'stmt_data.msgpack'
     args.state_save_path = 'state_map.msgpack'
-    args.header_save_path = 'block_header_df.csv'
     args.block_extension = '.dat'
     args.statement_extension = '.stmt'
     args.db_offset_bytes = DB_OFFSET_BYTES
