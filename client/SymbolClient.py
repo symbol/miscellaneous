@@ -75,7 +75,11 @@ class SymbolPeerClient:
         return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
 
     def get_node_info(self):
-        return self._send_socket_request(0x111, self._parse_node_info_response)
+        node_info = self._send_socket_request(0x111, self._parse_node_info_response)
+        if not node_info['host']:
+            node_info['host'] = self.node_host
+
+        return node_info
 
     @staticmethod
     def get_peers():
@@ -141,7 +145,6 @@ class SymbolPeerClient:
         name_size = reader.read_int(1)
         node_info['host'] = reader.read_bytes(host_size).decode('utf8')
         node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf8')
-
         return node_info
 
 
@@ -175,6 +178,8 @@ class SymbolClient:
 
     def get_node_info(self):
         json_response = self._get_json('node/info')
+        if not json_response['host']:
+            json_response['host'] = self.node_host
         return json_response
 
     def get_peers(self):
