@@ -14,8 +14,6 @@ setup(
         'dash-bootstrap-components',
         'numpy',
         'pandas',
-        'tensorflow',
-        'tensorflow-probability',
         'tqdm',
     ]
 )
