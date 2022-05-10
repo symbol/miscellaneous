@@ -7,7 +7,6 @@ import requests
 from tqdm import tqdm
 
 XYM_API_HOST = os.getenv('XYM_API_HOST', 'wolf.importance.jp')
-# XEM_API_HOST = os.getenv('XEM_API_HOST', 'alice5.nem.ninja')
 XEM_API_HOST = os.getenv('XEM_API_HOST', 'bigalice3.nem.ninja')
 CM_KEY = os.getenv('CM_KEY', '')
 

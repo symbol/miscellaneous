@@ -1,13 +1,10 @@
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
-import tensorflow_probability as tfp
 from dash import dcc, html
-from data import get_gecko_prices, get_gecko_spot, lookup_balance
-from models import get_mean_variance_forecasts
 
-tfd = tfp.distributions
-
+from treasury.data import get_gecko_prices, get_gecko_spot, lookup_balance
+from treasury.models import get_mean_variance_forecasts
 
 EXPLORER_URL_MAP = {
     'XYM': 'https://symbol.fyi/accounts/',
@@ -261,7 +258,7 @@ def update_price_chart(lookback_prices, price_fig):
             go.Scattergl(
                 x=lookback_returns.index.values,
                 y=lookback_returns[asset].values,
-                line=dict(width=2),  # , color=COLOR_DICT.get(asset,'#ffffff')),
+                line=dict(width=2),
                 name=asset,
                 customdata=lookback_prices[asset],
                 hovertemplate=(

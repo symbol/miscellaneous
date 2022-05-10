@@ -3,11 +3,12 @@ import argparse
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-from callbacks import (download_full, download_full_prices, download_small, download_small_prices, get_update_balances, get_update_prices,
-                       update_forecast_chart, update_price_chart, update_summary)
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
-from data import get_gecko_spot, lookup_balance
+
+from treasury.callbacks import (download_full, download_full_prices, download_small, download_small_prices, get_update_balances,
+                                get_update_prices, update_forecast_chart, update_price_chart, update_summary)
+from treasury.data import get_gecko_spot, lookup_balance
 
 # defaults for startup
 FORECAST_PERIODS = 90
@@ -164,7 +165,7 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
         dcc.Store(id='small-sims'),
         dcc.Interval(
             id='auto-update-trigger',
-            interval=auto_update_delay_seconds*1000,  # in milliseconds
+            interval=auto_update_delay_seconds*1000,
             n_intervals=0)
     ], fluid=True)
 
@@ -236,16 +237,15 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
 
 def main():
     parser = argparse.ArgumentParser(description='webapp that processes data files and renders fork information')
-    # parser.add_argument('--resources', help='directory containing resources', required=True)
     parser.add_argument('--host', help='host ip, defaults to localhost', default='127.0.0.1')
     parser.add_argument('--port', type=int, help='port for webserver', default=8080)
     parser.add_argument('--proxy', help='proxy spec of the form ip:port::gateway to render urls', default=None)
-    parser.add_argument('--base_path', help='extension if server is not at root of url', default=None)
+    parser.add_argument('--base-path', help='extension if server is not at root of url', default=None)
     parser.add_argument('--serve', action='store_true', help='flag to indicate whether server will recieve external requests')
-    parser.add_argument('--price_data_loc', help='path to flat file storing collected data', default='../data/price_data.csv')
-    parser.add_argument('--account_data_loc', help='path to csv with account information', default='../data/accounts.csv')
-    parser.add_argument('--start_date', help='default start date', default='2021-12-01')
-    parser.add_argument('--end_date', help='default end date', default=None)
+    parser.add_argument('--price-data-loc', help='path to flat file storing collected data', default='../data/price_data.csv')
+    parser.add_argument('--account-data-loc', help='path to csv with account information', default='../data/accounts.csv')
+    parser.add_argument('--start-date', help='default start date', default='2021-12-01')
+    parser.add_argument('--end-date', help='default end date', default=None)
     args = parser.parse_args()
 
     if args.end_date is None:
