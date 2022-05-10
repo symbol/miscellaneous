@@ -1,14 +1,15 @@
-import time
-import os
 import datetime
+import os
+import time
 
 import pandas as pd
 import requests
 from tqdm import tqdm
 
 XYM_API_HOST = os.getenv('XYM_API_HOST', 'wolf.importance.jp')
-XEM_API_HOST = os.getenv('XEM_API_HOST', 'alice5.nem.ninja')
-CM_KEY = os.getenv('CM_KEY' '')
+# XEM_API_HOST = os.getenv('XEM_API_HOST', 'alice5.nem.ninja')
+XEM_API_HOST = os.getenv('XEM_API_HOST', 'bigalice3.nem.ninja')
+CM_KEY = os.getenv('CM_KEY', '')
 
 GECKO_TICKER_MAP = {
    'ADA': 'cardano',
@@ -34,7 +35,7 @@ def lookup_balance(address, asset):
     asset = asset.lower()
     if asset in ['symbol', 'xym']:
         return lookup_xym_balance(address)
-    elif asset in ['nem', 'xem']:
+    if asset in ['nem', 'xem']:
         return lookup_xem_balance(address)
     else:
         raise ValueError(f'Asset not supported: {asset}')
@@ -94,9 +95,7 @@ def get_cm_metrics(assets, metrics, start_time='2016-01-01', end_time=None, freq
 
 
 def fix_ticker(ticker):
-    if ticker in GECKO_TICKER_MAP:
-        ticker = GECKO_TICKER_MAP[ticker]
-    return ticker
+    return GECKO_TICKER_MAP.get(ticker, ticker)
 
 
 def get_gecko_spot(ticker, currency='usd'):

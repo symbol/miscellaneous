@@ -3,16 +3,13 @@ import argparse
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
+from callbacks import (download_full, download_full_prices, download_small, download_small_prices, get_update_balances, get_update_prices,
+                       update_forecast_chart, update_price_chart, update_summary)
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from data import get_gecko_spot, lookup_balance
 
-from callbacks import (update_summary, get_update_prices, update_price_chart, update_forecast_chart, download_full_prices,
-                       download_full, download_small_prices, download_small)
-
 # defaults for startup
-START_DATE = '2021-12-01'
-END_DATE = pd.to_datetime('today').strftime('%Y-%m-%d')
 FORECAST_PERIODS = 90
 NUM_SIMS = 1000
 REF_TICKER = 'XEM'
@@ -20,19 +17,18 @@ THEME = dbc.themes.VAPOR
 TITLE = 'Symbol Treasury Analysis Tool v1.0'
 
 
-def get_app(price_data_loc, accounts_loc, serve, base_path):
+def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_date, auto_update_delay_seconds=600):
 
     app = dash.Dash(__name__, serve_locally=serve, url_base_pathname=base_path, external_stylesheets=[THEME])
     app.title = TITLE
 
-    # prep data
+    # preprocess data for fast load
     prices = pd.read_csv(price_data_loc, header=0, index_col=0, parse_dates=True)
-    lookback_prices = prices.loc[START_DATE:END_DATE]
+    lookback_prices = prices.loc[start_date:end_date]
 
-    accounts = pd.read_csv(accounts_loc, header=0, index_col=None)
+    accounts = pd.read_csv(account_data_loc, header=0, index_col=None)
     accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
     asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
-    accounts['Address'] = accounts['Address'].apply(lambda x: html.A(f'{x[:10]}...', href=f'https://symbol.fyi/accounts/{x}'))
 
     summary_df = pd.DataFrame.from_records({
         'Latest XYM Price': [f'${get_gecko_spot("XYM"):.4}'],
@@ -47,7 +43,7 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
         ], id='summary-table'),
         dbc.Row([
             dbc.Col([
-                dbc.Table.from_dataframe(accounts[['Name', 'Balance', 'Address']], bordered=True, color='dark', id='address-table'),
+                dbc.Spinner(html.Div([], id='address-table')),
                 dbc.FormText(
                     'Select the asset used to seed the simulation. Historical data from this asset will be used ' +
                     'to fit a model for future price changes, which samples the possible future price paths.'),
@@ -82,7 +78,7 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
                 dbc.InputGroup(
                     [
                         dbc.InputGroupText('Data Start:'),
-                        dbc.Input(id='start-date', value=START_DATE, type='text', debounce=True)
+                        dbc.Input(id='start-date', value=start_date, type='text', debounce=True)
                     ],
                     className='mb-3',
                 ),
@@ -92,7 +88,7 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
                 dbc.InputGroup(
                     [
                         dbc.InputGroupText('Data End:'),
-                        dbc.Input(id='end-date', value=END_DATE, type='text', debounce=True)
+                        dbc.Input(id='end-date', value=end_date, type='text', debounce=True)
                     ],
                     className='mb-3',
                 ),
@@ -128,6 +124,12 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
                     ],
                     className='mb-3',
                 ),
+                dbc.Row([
+                    dbc.Button('Download Sim Balances', id='download-button-full', color='primary', className='me-1'),
+                    dbc.Button('Download High/Low/Mid Balances', id='download-button-small', color='secondary', className='me-1'),
+                    dbc.Button('Download Simulated Ref Asset Prices', id='price-button-full', color='success', className='me-1'),
+                    dbc.Button('Download High/Low/Mid Ref Asset Prices', id='price-button-small', color='warning', className='me-1'),
+                ]),
                 dcc.Download(id='download-small-dataframe'),
                 dcc.Download(id='download-full-dataframe'),
                 dcc.Download(id='download-small-prices'),
@@ -160,6 +162,10 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
         dcc.Store(id='small-prices'),
         dcc.Store(id='full-sims'),
         dcc.Store(id='small-sims'),
+        dcc.Interval(
+            id='auto-update-trigger',
+            interval=auto_update_delay_seconds*1000,  # in milliseconds
+            n_intervals=0)
     ], fluid=True)
 
     app.callback(
@@ -190,6 +196,11 @@ def get_app(price_data_loc, accounts_loc, serve, base_path):
         Output('summary-table', 'children'),
         Input('lookback-prices', 'data'),
         Input('ref-ticker', 'value'))(update_summary)
+
+    app.callback(
+        Output('address-table', 'children'),
+        Output('asset-values', 'data'),
+        Input('auto-update-trigger', 'n_intervals'))(get_update_balances(account_data_loc))
 
     app.callback(
         Output('ref-prices', 'data'),
@@ -232,15 +243,15 @@ def main():
     parser.add_argument('--base_path', help='extension if server is not at root of url', default=None)
     parser.add_argument('--serve', action='store_true', help='flag to indicate whether server will recieve external requests')
     parser.add_argument('--price_data_loc', help='path to flat file storing collected data', default='../data/price_data.csv')
-    parser.add_argument('--accounts_loc', help='path to csv with account information', default='../data/accounts.csv')
+    parser.add_argument('--account_data_loc', help='path to csv with account information', default='../data/accounts.csv')
     parser.add_argument('--start_date', help='default start date', default='2021-12-01')
     parser.add_argument('--end_date', help='default end date', default=None)
     args = parser.parse_args()
 
     if args.end_date is None:
-        args.end_date = pd.to_datetime('today').strftime('%Y-%m-%d')
+        args.end_date = (pd.to_datetime('today')-pd.Timedelta(1, unit='D')).strftime('%Y-%m-%d')
 
-    app = get_app(args.price_data_loc, args.accounts_loc, args.serve, args.base_path)
+    app = get_app(args.price_data_loc, args.account_data_loc, args.serve, args.base_path, args.start_date, args.end_date)
     app.run_server(host=args.host, port=args.port, threaded=True, proxy=args.proxy, debug=True)
 
 

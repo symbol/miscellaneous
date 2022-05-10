@@ -2,12 +2,17 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 import tensorflow_probability as tfp
-
-from dash import dcc
-from data import get_gecko_spot, get_gecko_prices
+from dash import dcc, html
+from data import get_gecko_prices, get_gecko_spot, lookup_balance
 from models import get_mean_variance_forecasts
 
 tfd = tfp.distributions
+
+
+EXPLORER_URL_MAP = {
+    'XYM': 'https://symbol.fyi/accounts/',
+    'XEM': 'https://explorer.nemtool.com/#/s_account?account='
+}
 
 
 def download_full_prices(_, full_prices):
@@ -44,6 +49,22 @@ def update_summary(lookback_prices, ref_ticker):
         'Reference Vol (Daily)': [f'{lookback_prices[ref_ticker].pct_change().std():.3%}']
     }
     return [dbc.Table.from_dataframe(pd.DataFrame.from_records(summary_dict), bordered=True, color='dark')]
+
+
+def get_update_balances(account_data_loc):
+    """Wrapper to inject location dependency into account balance callback"""
+
+    def update_balances(_):
+        accounts = pd.read_csv(account_data_loc, header=0, index_col=None)
+        accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
+        asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
+        updated_addresses = []
+        for _, row in accounts.iterrows():
+            updated_addresses.append(html.A(f'{row.Address[:10]}...', href=f'{EXPLORER_URL_MAP[row.Asset]}{row.Address}'))
+        accounts['Address'] = updated_addresses
+        return [dbc.Table.from_dataframe(accounts[['Name', 'Balance', 'Address']], bordered=True, color='dark')], asset_values
+
+    return update_balances
 
 
 def get_update_prices(price_data_loc):

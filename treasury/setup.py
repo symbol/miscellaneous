@@ -8,21 +8,14 @@ setup(
         '': ['*.json', '*.csv'],
         'treasury': ['treasury/*']
     },
-    # scripts=[
-    #     'block/extractor/extract',
-    #     'block/harvester/get_block_stats',
-    #     'block/delegates/find_delegates'
-    # ],
     install_requires=[
         'requests',
         'dash',
-        'jupyter-dash',
-        'msgpack-python',
+        'dash-bootstrap-components',
         'numpy',
         'pandas',
         'tensorflow',
         'tensorflow-probability',
         'tqdm',
-        'networkx',
     ]
 )
