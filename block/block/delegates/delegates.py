@@ -9,7 +9,6 @@ from block.extractor import public_key_to_address
 
 def find_delegates(accounts, state_map):
     """Find current delegates for each node based on chain state at final height"""
-    # TODO: add the ability to specify a height
 
     accounts = accounts.copy()
     for acc in accounts:

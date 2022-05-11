@@ -8,11 +8,6 @@ setup(
         '': ['*.json', '*.pkl', '*.msgpack'],
         'block': ['block/*']
     },
-    # scripts=[
-    #     'block/extractor/extract',
-    #     'block/harvester/get_block_stats',
-    #     'block/delegates/find_delegates'
-    # ],
     install_requires=[
         'requests',
         'msgpack-python',

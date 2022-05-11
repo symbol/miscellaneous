@@ -1,5 +1,7 @@
 import os
+
 import pandas as pd
+
 from block.extractor.process import decode_msgpack, get_block_stats, get_tx_stats, main, parse_args
 
 

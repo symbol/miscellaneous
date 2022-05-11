@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 import argparse
-import pytest
+
 import msgpack
+import pytest
 
 from block.extractor.format import DB_OFFSET_BYTES
 
