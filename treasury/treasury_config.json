@@ -1,0 +1,30 @@
+{
+    "assets": [
+        "ADA",
+        "AVAX",
+        "BTC",
+        "DOT",
+        "ETH",
+        "LTC",
+        "MATIC",
+        "SOL",
+        "TRX",
+        "XEM",
+        "XMR",
+        "XYM"
+    ],
+    "api_hosts" : {
+        "XYM" : "wolf.importance.jp",
+        "XEM" : "bigalice3.nem.ninja"
+    },
+    "cm_key" : "",
+    "default_forecast_periods" : 90,
+    "default_num_sims" : 1000,
+    "default_ref_ticker" : "XEM",
+    "explorer_url_map" : {
+        "XYM": "https://symbol.fyi/accounts/",
+        "XEM": "https://explorer.nemtool.com/#/s_account?account="
+    },
+    "max_api_tries" : 6,
+    "retry_delay_seconds" : 15
+}

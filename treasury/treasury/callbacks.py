@@ -6,11 +6,6 @@ from dash import dcc, html
 from treasury.data import get_gecko_prices, get_gecko_spot, lookup_balance
 from treasury.models import get_mean_variance_forecasts
 
-EXPLORER_URL_MAP = {
-    'XYM': 'https://symbol.fyi/accounts/',
-    'XEM': 'https://explorer.nemtool.com/#/s_account?account='
-}
-
 
 def download_full_prices(_, full_prices):
     """Callback to feed the full price simulation download feature"""
@@ -48,23 +43,23 @@ def update_summary(lookback_prices, ref_ticker):
     return [dbc.Table.from_dataframe(pd.DataFrame.from_records(summary_dict), bordered=True, color='dark')]
 
 
-def get_update_balances(account_data_loc):
+def get_update_balances(account_data_loc, api_hosts, explorer_url_map):
     """Wrapper to inject location dependency into account balance callback"""
 
     def update_balances(_):
         accounts = pd.read_csv(account_data_loc, header=0, index_col=None)
-        accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
+        accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset, api_hosts)) for row in accounts.itertuples()]
         asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
         updated_addresses = []
         for _, row in accounts.iterrows():
-            updated_addresses.append(html.A(f'{row.Address[:10]}...', href=f'{EXPLORER_URL_MAP[row.Asset]}{row.Address}'))
+            updated_addresses.append(html.A(f'{row.Address[:10]}...', href=f'{explorer_url_map[row.Asset]}{row.Address}'))
         accounts['Address'] = updated_addresses
         return [dbc.Table.from_dataframe(accounts[['Name', 'Balance', 'Address']], bordered=True, color='dark')], asset_values
 
     return update_balances
 
 
-def get_update_prices(price_data_loc):
+def get_update_prices(price_data_loc, max_api_tries, retry_delay_seconds):
     """Wrapper to inject location dependency into price data callback"""
 
     def update_prices(
@@ -83,13 +78,23 @@ def get_update_prices(price_data_loc):
         if start_date < ref_prices.index[0]:
             new_prices = []
             for asset in ref_prices.columns:
-                new_prices.append(get_gecko_prices(asset, start_date, ref_prices.index[0]-pd.Timedelta(days=1)))
+                new_prices.append(get_gecko_prices(
+                    asset,
+                    start_date,
+                    ref_prices.index[0]-pd.Timedelta(days=1),
+                    max_api_tries,
+                    retry_delay_seconds))
             new_prices = pd.concat(new_prices, axis=1)
             ref_prices = pd.concat([new_prices, ref_prices], axis=0).sort_index().drop_duplicates()
         if end_date > ref_prices.index[-1]:
             new_prices = []
             for asset in ref_prices.columns:
-                new_prices.append(get_gecko_prices(asset, ref_prices.index[-1]+pd.Timedelta(days=1), end_date))
+                new_prices.append(get_gecko_prices(
+                    asset,
+                    ref_prices.index[-1]+pd.Timedelta(days=1),
+                    end_date,
+                    max_api_tries,
+                    retry_delay_seconds))
             new_prices = pd.concat(new_prices, axis=1)
             ref_prices = pd.concat([ref_prices, new_prices], axis=0).sort_index().drop_duplicates()
 

@@ -1,4 +1,5 @@
 import argparse
+import json
 
 import dash
 import dash_bootstrap_components as dbc
@@ -8,34 +9,49 @@ from dash.dependencies import Input, Output, State
 
 from treasury.callbacks import (download_full, download_full_prices, download_small, download_small_prices, get_update_balances,
                                 get_update_prices, update_forecast_chart, update_price_chart, update_summary)
-from treasury.data import get_gecko_spot, lookup_balance
+from treasury.data import get_gecko_spot, get_gecko_prices, lookup_balance
 
-# defaults for startup
-FORECAST_PERIODS = 90
-NUM_SIMS = 1000
-REF_TICKER = 'XEM'
 THEME = dbc.themes.VAPOR
 TITLE = 'Symbol Treasury Analysis Tool v1.0'
 
 
-def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_date, auto_update_delay_seconds=600):
+def get_app(price_data_loc, account_data_loc, config, serve, base_path, start_date, end_date, auto_update_delay_seconds=600):
 
     app = dash.Dash(__name__, serve_locally=serve, url_base_pathname=base_path, external_stylesheets=[THEME])
     app.title = TITLE
 
     # preprocess data for fast load
-    prices = pd.read_csv(price_data_loc, header=0, index_col=0, parse_dates=True)
+    try:
+        prices = pd.read_csv(price_data_loc, header=0, index_col=0, parse_dates=True)
+    except FileNotFoundError:
+        print('No price data found, pulling fresh data for assets in config (this may take a while)')
+        if len(config['assets']) > 0:
+            prices = []
+            for asset in config['assets']:
+                prices.append(get_gecko_prices(
+                    asset,
+                    start_date,
+                    end_date,
+                    config['max_api_tries'],
+                    config['retry_delay_seconds']))
+            prices = pd.concat(prices, axis=1).sort_index(axis=0).sort_index(axis=1)
+            print(f'Prices acquired successfully; writing to {price_data_loc}')
+            prices.to_csv(price_data_loc)
+        else:
+            print('No assets found in config; aborting!')
+            raise
+
     lookback_prices = prices.loc[start_date:end_date]
 
     accounts = pd.read_csv(account_data_loc, header=0, index_col=None)
-    accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset)) for row in accounts.itertuples()]
+    accounts['Balance'] = [int(lookup_balance(row.Address, row.Asset, config['api_hosts'])) for row in accounts.itertuples()]
     asset_values = accounts.groupby('Asset')['Balance'].sum().to_dict()
 
     summary_df = pd.DataFrame.from_records({
         'Latest XYM Price': [f'${get_gecko_spot("XYM"):.4}'],
         'Latest XEM Price': [f'${get_gecko_spot("XEM"):.4}'],
-        'Reference Trend (Daily)': [f'{prices[REF_TICKER].pct_change().mean():.3%}'],
-        'Reference Vol (Daily)': [f'{prices[REF_TICKER].pct_change().std():.3%}']})
+        'Reference Trend (Daily)': [f'{prices[config["default_ref_ticker"]].pct_change().mean():.3%}'],
+        'Reference Vol (Daily)': [f'{prices[config["default_ref_ticker"]].pct_change().std():.3%}']})
 
     app.layout = dbc.Container([
         dbc.Row([html.H1(TITLE)], justify='center'),
@@ -51,7 +67,10 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
                 dbc.InputGroup(
                     [
                         dbc.InputGroupText('Reference Asset:'),
-                        dbc.Select(id='ref-ticker', options=[{'label': ticker, 'value': ticker} for ticker in prices], value='XYM')
+                        dbc.Select(
+                            id='ref-ticker',
+                            options=[{'label': ticker, 'value': ticker} for ticker in prices],
+                            value=config['default_ref_ticker'])
                     ],
                     className='mb-3',
                 ),
@@ -59,7 +78,14 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
                 dbc.InputGroup(
                     [
                         dbc.InputGroupText('Forecast Days:'),
-                        dbc.Input(id='forecast-days', value=FORECAST_PERIODS, type='number', min=1, max=1000, step=1, debounce=True)
+                        dbc.Input(
+                            id='forecast-days',
+                            value=config['default_forecast_periods'],
+                            type='number',
+                            min=1,
+                            max=1000,
+                            step=1,
+                            debounce=True)
                     ],
                     className='mb-3',
                 ),
@@ -69,7 +95,7 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
                 dbc.InputGroup(
                     [
                         dbc.InputGroupText('Number of Simulations:'),
-                        dbc.Input(id='num-sims', value=NUM_SIMS, type='number', min=1, step=1, debounce=True)
+                        dbc.Input(id='num-sims', value=config['default_num_sims'], type='number', min=1, step=1, debounce=True)
                     ],
                     className='mb-3',
                 ),
@@ -201,7 +227,8 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
     app.callback(
         Output('address-table', 'children'),
         Output('asset-values', 'data'),
-        Input('auto-update-trigger', 'n_intervals'))(get_update_balances(account_data_loc))
+        Input('auto-update-trigger', 'n_intervals'))(
+            get_update_balances(account_data_loc, config['api_hosts'],  config['explorer_url_map']))
 
     app.callback(
         Output('ref-prices', 'data'),
@@ -209,7 +236,7 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
         Input('start-date', 'value'),
         Input('end-date', 'value'),
         State('ref-prices', 'data'),
-        State('lookback-prices', 'data'))(get_update_prices(price_data_loc))
+        State('lookback-prices', 'data'))(get_update_prices(price_data_loc, config['max_api_tries'], config['retry_delay_seconds']))
 
     app.callback(
         Output('forecast-graph', 'figure'),
@@ -236,7 +263,8 @@ def get_app(price_data_loc, account_data_loc, serve, base_path, start_date, end_
 
 
 def main():
-    parser = argparse.ArgumentParser(description='webapp that processes data files and renders fork information')
+    parser = argparse.ArgumentParser(description='webapp that monitors treasury balances and crypto asset prices')
+    parser.add_argument('--config', '-c', help='configuration file location', default='../treasury_config.json')
     parser.add_argument('--host', help='host ip, defaults to localhost', default='127.0.0.1')
     parser.add_argument('--port', type=int, help='port for webserver', default=8080)
     parser.add_argument('--proxy', help='proxy spec of the form ip:port::gateway to render urls', default=None)
@@ -251,7 +279,15 @@ def main():
     if args.end_date is None:
         args.end_date = (pd.to_datetime('today')-pd.Timedelta(1, unit='D')).strftime('%Y-%m-%d')
 
-    app = get_app(args.price_data_loc, args.account_data_loc, args.serve, args.base_path, args.start_date, args.end_date)
+    try:
+        with open(args.config) as config_file:
+            args.config = json.load(config_file)
+    except FileNotFoundError:
+        print(f'No configuration file found at {args.config}')
+        print('Configuration is required to run the app!')
+        raise
+
+    app = get_app(args.price_data_loc, args.account_data_loc, args.config, args.serve, args.base_path, args.start_date, args.end_date)
     app.run_server(host=args.host, port=args.port, threaded=True, proxy=args.proxy, debug=True)
 
 
