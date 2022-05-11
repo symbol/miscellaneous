@@ -188,4 +188,28 @@ Example: Retrieve all accounts with balances greater than 50M from the network d
 
 ```sh
 python -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv
-````
+```
+
+## treasury
+
+### serve
+
+_runs a self-contained webapp for monitoring account balances, scraping price data, and visualizing future account values in aggregate_
+
+Default location for storage is `treasury/data` but any alternative location can be provided. Configuration is located at `treasury/treasury_config.json`. **All config fields other than cm_key are required.** 
+
+Price data download is relatively lightweight for default configuration. If no data is present, the app will attempt to collect prices for all assets defined in configuration on first load. Price data is cached to disk as collected, so data for any particular asset/date combination should be download no more than once. 
+
+Server can be invoked with defaults via:
+
+```sh
+treasury/serve.sh
+```
+
+or manually with:
+
+```sh
+python -m treasury.app --config './treasury_config.json' --account-data-loc './data/accounts.csv' --price-data-loc './data/price_data.csv' --serve --host '0.0.0.0'
+```
+
+With default settings the app will listen for requests at [http:\\\\localhost:8080](http:\\\\localhost:8080)

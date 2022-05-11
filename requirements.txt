@@ -1,4 +1,9 @@
+dash==2.0.0
+dash-bootstrap-components==1.0.3
+numpy==1.21.2
+pandas==1.3.3
 PyYAML==5.4.1
 requests==2.26.0
 symbol-sdk-core-python==2.0.1
+tqdm==4.62.3
 zenlog==1.1
