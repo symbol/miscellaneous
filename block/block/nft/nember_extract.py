@@ -35,7 +35,7 @@ def main(args):
                     gen_tx = [x for x in txn[b'payload'][b'embedded_transactions'] if x[b'type'] == b'414d']
                     meta_tx = [x for x in txn[b'payload'][b'embedded_transactions'] if x[b'type'] == b'4244']
                     supply_tx = [x for x in txn[b'payload'][b'embedded_transactions'] if x[b'type'] == b'424d']
-                    if any([len(x) != 1 for x in [gen_tx, meta_tx, supply_tx]]):
+                    if any(len(x) != 1 for x in [gen_tx, meta_tx, supply_tx]):
                         platform_tx.append(txn)
                         continue
                     gen_tx = gen_tx[0]

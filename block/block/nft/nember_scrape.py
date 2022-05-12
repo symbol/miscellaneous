@@ -139,7 +139,7 @@ def main(args):
                 gen_tx = [x for x in txn['transaction']['transactions'] if x['transaction']['type'] == 0x414d]
                 meta_tx = [x for x in txn['transaction']['transactions'] if x['transaction']['type'] == 0x4244]
                 supply_tx = [x for x in txn['transaction']['transactions'] if x['transaction']['type'] == 0x424d]
-                if any([len(x) != 1 for x in [gen_tx, meta_tx, supply_tx]]):
+                if any(len(x) != 1 for x in [gen_tx, meta_tx, supply_tx]):
                     platform_tx.append(txn)
                     continue
                 gen_tx = gen_tx[0]
