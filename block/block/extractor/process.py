@@ -229,6 +229,7 @@ def decode_msgpack(packed_data):
 
 
 def main(args):
+    # pylint: disable=too-many-locals
 
     h_writer = csv.DictWriter(
         open(os.path.join(args.output, args.header_save_path), 'a' if args.append else 'w'),

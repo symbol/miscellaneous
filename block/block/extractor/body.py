@@ -92,6 +92,7 @@ def deserialize_footer(footer_data, header):
 
 
 def deserialize_tx_payload(payload_data, payload_type):
+    # pylint: disable=too-many-branches, too-many-statements
     """Produce a nested python dict from a raw xym statemet payload
 
     Parameters

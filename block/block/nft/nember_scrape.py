@@ -120,6 +120,8 @@ async def get_nember_tx(mosaic_ids, node, sleep, max_failures=5):
 
 
 def main(args):
+    # pylint: disable=too-many-locals, too-many-branches
+
     loop = asyncio.get_event_loop()
     # should request max height from API; remove parameter
     transactions = loop.run_until_complete(get_nember_data(nodes[0], 1/args.request_limit, max_height=args.max_height))

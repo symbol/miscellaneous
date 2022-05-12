@@ -21,6 +21,7 @@ from block.extractor.util import fmt_unpack
 
 
 def main(args):
+    # pylint: disable=too-many-locals, too-many-statements
 
     block_format_pattern = re.compile('[0-9]{5}'+args.block_extension)
     block_paths = glob.glob(os.path.join(args.input, '**', '*'+args.block_extension), recursive=True)
@@ -116,6 +117,8 @@ def main(args):
 
 
 def main_stream(args):
+
+    # pylint: disable=too-many-locals, too-many-statements
 
     block_format_pattern = re.compile('[0-9]{5}'+args.block_extension)
     block_paths = glob.glob(os.path.join(args.input, '**', '*'+args.block_extension), recursive=True)

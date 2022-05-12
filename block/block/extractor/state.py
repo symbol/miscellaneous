@@ -117,6 +117,8 @@ class XYMStateMap():
         return self._state_map.items()
 
     def insert_txn(self, txn, height, fee_multiplier):
+        # pylint: disable=too-many-locals, too-many-branches
+
         """Insert a transaction into the state map and record resulting changes
 
         Parameters
@@ -254,6 +256,7 @@ class XYMStateMap():
         return b_series / 1000000  # divide by one million to get units of XYM
 
     def get_harvester_graph(self, height=np.inf, min_harvester_size=10000, min_node_size=10000, track_remote=False):
+        # pylint: disable=too-many-locals
         """Produce a graph representing harvester-node relationships for a range of network heights
 
         Parameters

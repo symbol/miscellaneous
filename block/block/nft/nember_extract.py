@@ -16,6 +16,7 @@ def extract_nft_transfer(txn, height, nft_tx_map):
 
 
 def main(args):
+    # pylint: disable=too-many-nested-blocks, too-many-branches
 
     with open(args.input, 'rb') as file:
         blocks = msgpack.unpack(file, unicode_errors=None, raw=True)

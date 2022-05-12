@@ -11,6 +11,8 @@ from block.extractor.util import encode_address, fmt_unpack
 
 
 def deserialize_receipt_payload(receipt_data, receipt_type):
+    # pylint: disable=too-many-statements, too-many-branches
+
     """Produce a nested python dict from a raw receipt payload
 
     Parameters
