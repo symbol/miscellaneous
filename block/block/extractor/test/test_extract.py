@@ -2,6 +2,8 @@ import os
 
 from block.extractor.extract import main, main_stream, parse_args
 
+# pylint: disable=consider-using-with
+
 
 def test_main(fixture_extract_args):
     main(fixture_extract_args)

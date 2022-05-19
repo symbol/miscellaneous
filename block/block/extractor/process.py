@@ -229,17 +229,17 @@ def decode_msgpack(packed_data):
 
 
 def main(args):
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, consider-using-with
 
     h_writer = csv.DictWriter(
-        open(os.path.join(args.output, args.header_save_path), 'a' if args.append else 'w'),
+        open(os.path.join(args.output, args.header_save_path), 'a' if args.append else 'w', encoding='utf8'),
         HEADER_KEYS,
         extrasaction='ignore',
         escapechar='\\',
         quoting=csv.QUOTE_MINIMAL)
 
     tx_writer = csv.DictWriter(
-        open(os.path.join(args.output, args.tx_save_path), 'a' if args.append else 'w'),
+        open(os.path.join(args.output, args.tx_save_path), 'a' if args.append else 'w', encoding='utf8'),
         TX_KEYS,
         extrasaction='ignore',
         escapechar='\\',

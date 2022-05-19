@@ -21,7 +21,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     print(f'Reading account information from {args.input}')
-    with open(args.input, 'r') as f:
+    with open(args.input, 'r', encoding='utf8') as f:
         accounts = json.loads(f.read())['accounts']
 
     print(f'Loading chain data from {args.state_path} and {args.headers_path}')

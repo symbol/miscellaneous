@@ -4,6 +4,8 @@ import pandas as pd
 
 from block.extractor.process import decode_msgpack, get_block_stats, get_tx_stats, main, parse_args
 
+# pylint: disable=consider-using-with
+
 
 def test_get_block_stats(fixture_block, fixture_block_stats):
     block_stats = get_block_stats(fixture_block)

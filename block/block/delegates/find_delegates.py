@@ -20,14 +20,14 @@ if __name__ == '__main__':
     state_map = XYMStateMap.read_msgpack(args.state_path)
 
     print(f'Reading nodes from {args.input}')
-    with open(args.input, 'r') as f:
+    with open(args.input, 'r', encoding='utf8') as f:
         accounts = json.loads(f.read())['accounts']
 
     print('Identifying delegates . . .')
     delegate_accounts = find_delegates(accounts, state_map)
 
     print(f'All accounts processed, writing output to {args.output}')
-    with open(args.output, 'w') as f:
+    with open(args.output, 'w', encoding='utf8') as f:
         f.write(json.dumps(delegate_accounts, indent=4))
 
     print('Delegate analysis complete!')
