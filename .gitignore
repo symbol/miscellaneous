@@ -1,6 +1,7 @@
 *~
 *.pch
 *.pyc
+*.ipynb
 __pycache__/
 .idea
 .vscode/

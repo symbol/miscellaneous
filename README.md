@@ -51,6 +51,112 @@ Example: check accounts in `account/samples/verify_ownership.yaml`.
 python -m account.verify_ownership --input account/samples/verify_ownership.yaml
 ```
 
+## block
+
+Running block extraction scripts requires the installaton of the local **block** package. This can be accomplished as follows:
+```sh
+pip install -e setup.py
+```
+
+### extractor/extract
+
+_extracts chain data from node files and produces compact output for applications_
+
+The extractor is the first step in processing raw block data using the block-level scripts, either to drive visualizations or chain analysis.
+There are two output types:
+- blocks
+- statements
+
+Example: extract data from node files stored in `block/data`
+Default output dir is `block/resources`
+
+```sh
+python extractor/extract.py --input data --output resources --stream
+```
+
+The --stream flag will stream block data and write a single output at a time, which dramatically reduces memory footprint at the cost of significantly slower processing. 
+Without this flag the extractor is extremely memory intensive as it loads the entire chain state representation into memory; omit at your own risk.
+
+### extractor/process
+
+_processes extracted chain data to generate useful/readable representation of chain state_
+
+The processor streams data output by the extractor and builds human-readable representations of the block headers
+as well as a rich, indexable representation of the chain state.
+There are two output types:
+- block headers
+- chain state
+
+Example: process data from extractor output stored in `block/resources`
+Default output dir is `block/resources`
+
+```sh
+python extractor/process.py --input resources --output resources
+```
+
+### delegates/find_delegates
+
+_finds current delegates associated with one or more nodes using serialized state data_
+
+This script requires a JSON containing accounts similar to what is receieved from the /node/info API endpoint; see example in `resources/accounts.json`.
+As long as node URLs/names are available it will attempt to get missing information from the nodes.
+
+Example: find all delegates from nodes listed in `resources/accounts.json` using chain state from `resources/state_map.msgpack`.
+Default output dir is `block/delegates/output`.
+
+```sh
+python delegates/find_delegates.py --input resources/accounts.json --state_path resources/state_map.msgpack
+```
+
+### harvester/get_harvester_stats
+
+_aggregate harvesting statistics using serialized state data_
+
+This script requires a JSON containing harvester addresses; see example in `resources/accounts.json`.
+Stats are aggregated for the full chain history and binned based on provided frequencies.
+The output falls into three categories:
+- blocks harvested
+- fees collected
+- total XYM balance
+
+Example: get stats for harvesters listed in `resources/accounts.json` using chain state from `resources/state_map.msgpack` and `resources/block_header_df.pkl`
+Default output dir is `block/harvester/output`
+
+```sh
+python harvester/get_harvester_stats.py --input resources/accounts.json --state_path resources/state_map.msgpack --headers_path resources/block_header_df.pkl
+```
+
+### nft/nember_extract
+
+_extract transactions corresponding to minting of nember NFTs_
+
+Produces two types of output
+- NFT descriptions
+- transactions involving NFTs after minting
+
+Example: extract nember data from chain data in `resources/block_data.msgpack`
+Default output dir is `block/nft/output`
+
+```sh
+python nft/nember_extract.py --input resources/block_data.msgpack --output nft/output
+```
+
+### nft/nember_scrape
+
+_scrape transactions corresponding to minting of nember NFTs from API nodes_
+
+Produces two types of output
+- NFT descriptions
+- transactions involving NFTs after minting
+
+Example: scrape all transactions corresponding to nember NFTs (takes a couple hours minimum)
+Default output dir is `block/nft/output`
+
+```sh
+python nft/nember_scrape.py
+```
+
+
 ## health
 
 ### check_nem_balances
