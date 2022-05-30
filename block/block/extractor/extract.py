@@ -33,36 +33,36 @@ def main(args):
         block_paths.set_description(f'processing block file: {path}')
 
         with open(path, mode='rb') as file:
-            blk_data = file.read()
+            block_data = file.read()
 
         i = args.db_offset_bytes
-        while i < len(blk_data):
+        while i < len(block_data):
 
             # get fixed length data
-            header = deserialize_header(blk_data[i:i+HEADER_LEN])
-            footer = deserialize_footer(blk_data[i+HEADER_LEN:i+header['size']], header)
+            header = deserialize_header(block_data[i:i+HEADER_LEN])
+            footer = deserialize_footer(block_data[i+HEADER_LEN:i+header['size']], header)
             i += header['size']
-            block_hash, generation_hash = struct.unpack('<32s32s', blk_data[i:i+64])
+            block_hash, generation_hash = struct.unpack('<32s32s', block_data[i:i+64])
             i += 64
 
             # get transaction hashes
-            num_tx_hashes = struct.unpack('I', blk_data[i:i+4])[0]
+            num_tx_hashes = struct.unpack('I', block_data[i:i+4])[0]
             i += 4
             tx_hashes = None
             if args.save_tx_hashes:
                 tx_hashes = []
                 for _ in range(num_tx_hashes):
-                    tx_hashes.append(fmt_unpack(blk_data[i:i+TX_HASH_LEN], TX_HASH_FORMAT))
+                    tx_hashes.append(fmt_unpack(block_data[i:i+TX_HASH_LEN], TX_HASH_FORMAT))
                     i += TX_HASH_LEN
             else:
                 i += num_tx_hashes * TX_HASH_LEN
 
             # get sub cache merkle roots
-            root_hash_len = struct.unpack('I', blk_data[i:i+4])[0] * 32
+            root_hash_len = struct.unpack('I', block_data[i:i+4])[0] * 32
             i += 4
             merkle_roots = None
             if args.save_subcache_merkle_roots:
-                merkle_roots = fmt_unpack(blk_data[i:i+root_hash_len], SUBCACHE_MERKLE_ROOT_FORMAT)
+                merkle_roots = fmt_unpack(block_data[i:i+root_hash_len], SUBCACHE_MERKLE_ROOT_FORMAT)
             i += root_hash_len
 
             blocks.append({
@@ -76,42 +76,42 @@ def main(args):
 
     print('block data extraction complete!\n')
 
-    with open(os.path.join(args.output, args.block_save_path), 'wb') as file:
+    with open(os.path.join(args.output, 'block_data.msgpack'), 'wb') as file:
         file.write(msgpack.packb(blocks))
 
-    print(f'block data written to {os.path.join(args.output,args.block_save_path)}')
+    print(f'block data written to {os.path.join(args.output,"block_data.msgpack")}')
 
     statements_ = deserialize_statements(get_statement_paths(block_dir=args.input, statement_extension=args.statement_extension))
     blocks = sorted(blocks, key=lambda b: b['header']['height'])
-    s_height, stmts, _ = next(statements_)
+    statement_height, statements, _ = next(statements_)
 
     state_map = XYMStateMap()
 
-    with open(os.path.join(args.output, args.statement_save_path), 'wb') as file:
+    with open(os.path.join(args.output, 'stmt_data.msgpack'), 'wb') as file:
         for block in blocks:
             height = block['header']['height']
             state_map.insert_block(block)
 
-            if s_height > height:
+            if statement_height > height:
                 continue
 
-            while s_height < height:
-                s_height, stmts, _ = next(statements_)
+            while statement_height < height:
+                statement_height, statements, _ = next(statements_)
 
-            for stmt in stmts['transaction_statements']:
-                for rcpt in stmt['receipts']:
-                    state_map.insert_rcpt(rcpt, height)
+            for stmt in statements['transaction_statements']:
+                for receipt in stmt['receipts']:
+                    state_map.insert_rcpt(receipt, height)
 
-            file.write(msgpack.packb((s_height, stmts,)))
+            file.write(msgpack.packb((statement_height, statements,)))
 
     assert len([*statements_]) == 0, 'ERROR: statement data length does not match block length'
 
     print('statement data extraction complete!\n')
-    print(f'statement data written to {os.path.join(args.output,args.statement_save_path)}')
+    print(f'statement data written to {os.path.join(args.output,"stmt_data.msgpack")}')
 
-    state_map.to_msgpack(os.path.join(args.output, args.state_save_path))
+    state_map.to_msgpack(os.path.join(args.output, 'state_map.msgpack'))
 
-    print(f'state data written to {os.path.join(args.output,args.state_save_path)}')
+    print(f'state data written to {os.path.join(args.output,"state_map.msgpack")}')
 
     print('exiting . . .')
 
@@ -128,48 +128,48 @@ def main_stream(args):
     blocks_to_go = []
 
     statements_ = deserialize_statements(get_statement_paths(block_dir=args.input, statement_extension=args.statement_extension))
-    s_height, stmts, _ = next(statements_)
+    statement_height, statements, _ = next(statements_)
 
     packer = msgpack.Packer()
-    statement_store = open(os.path.join(args.output, args.statement_save_path), 'wb')
-    block_store = open(os.path.join(args.output, args.block_save_path), 'wb')
+    statement_store = open(os.path.join(args.output, 'stmt_data.msgpack'), 'wb')
+    block_store = open(os.path.join(args.output, 'block_data.msgpack'), 'wb')
 
     for path in block_paths:
 
         block_paths.set_description(f'processing block file: {path}; current queue len: {len(blocks_to_go)}')
 
         with open(path, mode='rb') as file:
-            blk_data = file.read()
+            block_data = file.read()
 
         i = args.db_offset_bytes
 
-        while i < len(blk_data):
+        while i < len(block_data):
 
             # get fixed length data
-            header = deserialize_header(blk_data[i:i+HEADER_LEN])
-            footer = deserialize_footer(blk_data[i+HEADER_LEN:i+header['size']], header)
+            header = deserialize_header(block_data[i:i+HEADER_LEN])
+            footer = deserialize_footer(block_data[i+HEADER_LEN:i+header['size']], header)
             i += header['size']
-            block_hash, generation_hash = struct.unpack('<32s32s', blk_data[i:i+64])
+            block_hash, generation_hash = struct.unpack('<32s32s', block_data[i:i+64])
             i += 64
 
             # get transaction hashes
-            num_tx_hashes = struct.unpack('I', blk_data[i:i+4])[0]
+            num_tx_hashes = struct.unpack('I', block_data[i:i+4])[0]
             i += 4
             tx_hashes = None
             if args.save_tx_hashes:
                 tx_hashes = []
                 for _ in range(num_tx_hashes):
-                    tx_hashes.append(fmt_unpack(blk_data[i:i+TX_HASH_LEN], TX_HASH_FORMAT))
+                    tx_hashes.append(fmt_unpack(block_data[i:i+TX_HASH_LEN], TX_HASH_FORMAT))
                     i += TX_HASH_LEN
             else:
                 i += num_tx_hashes * TX_HASH_LEN
 
             # get sub cache merkle roots
-            root_hash_len = struct.unpack('I', blk_data[i:i+4])[0] * 32
+            root_hash_len = struct.unpack('I', block_data[i:i+4])[0] * 32
             i += 4
             merkle_roots = None
             if args.save_subcache_merkle_roots:
-                merkle_roots = fmt_unpack(blk_data[i:i+root_hash_len], SUBCACHE_MERKLE_ROOT_FORMAT)
+                merkle_roots = fmt_unpack(block_data[i:i+root_hash_len], SUBCACHE_MERKLE_ROOT_FORMAT)
             i += root_hash_len
 
             block_data = {
@@ -186,39 +186,36 @@ def main_stream(args):
             # heap ensures we insert blocks and statements into state map in the right order
             heapq.heappush(blocks_to_go, (block_data['header']['height'], block_data))
 
-            while len(blocks_to_go) > 0 and s_height == blocks_to_go[0][0]:
+            while len(blocks_to_go) > 0 and statement_height == blocks_to_go[0][0]:
                 height, block_data = heapq.heappop(blocks_to_go)
                 state_map.insert_block(block_data)
-                for stmt in stmts['transaction_statements']:
-                    for rcpt in stmt['receipts']:
-                        state_map.insert_rcpt(rcpt, height)
-                statement_store.write(packer.pack((s_height, stmts)))
+                for stmt in statements['transaction_statements']:
+                    for receipt in stmt['receipts']:
+                        state_map.insert_rcpt(receipt, height)
+                statement_store.write(packer.pack((statement_height, statements)))
                 try:
-                    s_height, stmts, _ = next(statements_)
+                    statement_height, statements, _ = next(statements_)
                 except StopIteration:
                     break
 
     print('block data extraction complete!\n')
-    print(f'block data written to {os.path.join(args.output,args.block_save_path)}')
+    print(f'block data written to {os.path.join(args.output,"block_data.msgpack")}')
 
     assert len([*statements_]) == 0, 'ERROR: statement data length does not match block length'
     print('statement data extraction complete!\n')
-    print(f'statement data written to {os.path.join(args.output,args.statement_save_path)}')
+    print(f'statement data written to {os.path.join(args.output,"stmt_data.msgpack")}')
 
-    state_map.to_msgpack(os.path.join(args.output, args.state_save_path))
+    state_map.to_msgpack(os.path.join(args.output, 'state_map.msgpack'))
 
-    print(f'state data written to {os.path.join(args.output,args.state_save_path)}')
+    print(f'state data written to {os.path.join(args.output,"state_map.msgpack")}')
 
     print('exiting . . .')
 
 
 def parse_args(argv):
     parser = argparse.ArgumentParser(argv)
-    parser.add_argument('--input', type=str, default='data', help='Directory containing block store')
+    parser.add_argument('--input', type=str, default='data', help='directory containing block store')
     parser.add_argument('--output', type=str, default='resources', help='directory to dump output')
-    parser.add_argument('--block_save_path', type=str, default='block_data.msgpack', help='file to write the extracted block data to')
-    parser.add_argument('--statement_save_path', type=str, default='stmt_data.msgpack', help='file to write extracted statement data to')
-    parser.add_argument('--state_save_path', type=str, default='state_map.msgpack', help='file to write the extracted chain state data to')
     parser.add_argument('--block_extension', type=str, default='.dat', help='extension of block files; must be unique')
     parser.add_argument('--statement_extension', type=str, default='.stmt', help='extension of block files; must be unique')
     parser.add_argument('--db_offset_bytes', type=int, default=DB_OFFSET_BYTES, help='padding bytes at start of storage files')

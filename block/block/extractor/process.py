@@ -147,70 +147,73 @@ def get_tx_stats(block):
     header = block['header']
 
     # handle transactions
-    for txn in block['footer']['transactions']:
-        if txn['type'] in [b'4141', b'4241']:  # aggregate txn, append subtx instead
-            for sub_txn in txn['payload']['embedded_transactions']:
-                data.append(sub_txn.copy())
+    for transaction in block['footer']['transactions']:
+        if transaction['type'] in [b'4141', b'4241']:  # aggregate transaction, append subtx instead
+            for sub_transaction in transaction['payload']['embedded_transactions']:
+                data.append(sub_transaction.copy())
         else:
-            data.append(txn.copy())
+            data.append(transaction.copy())
 
-    # determine whether IDs are being handled appropriately; have some entry for headers of aggregate txns?
-    for txn in data:
-        txn['height'] = header['height']
-        txn['timestamp'] = header['timestamp']
-        txn.update(txn['payload'])
-        for key, value in list(txn.items()):
+    # determine whether IDs are being handled appropriately; have some entry for headers of aggregate transactions?
+    for transaction in data:
+        transaction['height'] = header['height']
+        transaction['timestamp'] = header['timestamp']
+        transaction.update(transaction['payload'])
+        for key, value in list(transaction.items()):
             if key in TX_KEYS_TO_DROP:
-                del txn[key]
+                del transaction[key]
             elif isinstance(value, bytes):
                 try:
-                    txn[key] = value.decode('utf-8')
+                    transaction[key] = value.decode('utf-8')
                 except UnicodeDecodeError:
-                    txn[key] = hexlify(value).decode('utf-8')
+                    transaction[key] = hexlify(value).decode('utf-8')
             elif isinstance(value, list):
-                txn[key] = str(value)
+                transaction[key] = str(value)
 
     return data
 
 
 def guarded_convert(pubkey_string):
+    """Convert address conditional on a check to ensure valid public key format"""
     if isinstance(pubkey_string, str) and len(pubkey_string) == 64:
         return public_key_to_address(bytes.fromhex(pubkey_string))
     return pubkey_string
 
 
-def filter_transactions(tx_df, address=None, tx_types=None, start_datetime='1900-01-01', end_datetime='2200-01-01'):
+def filter_transactions(transaction_df, address=None, transaction_types=None, start_datetime='1900-01-01', end_datetime='2200-01-01'):
+    """Filter processed transactions based on dates, tx types, and address"""
 
     start_datetime = pd.to_datetime(start_datetime)
     end_datetime = pd.to_datetime(end_datetime)
 
-    tx_df = tx_df.loc[start_datetime:end_datetime]
-    if tx_df.empty:
-        return tx_df
+    transaction_df = transaction_df.loc[start_datetime:end_datetime]
+    if transaction_df.empty:
+        return transaction_df
 
     filter_key = None
 
-    # filter based on all addresses/public keys for completeness
+    # filter based on all address/public key fields for completeness
     if address is not None:
-        filter_key = pd.Series(False, index=tx_df.index)
+        filter_key = pd.Series(False, index=transaction_df.index)
         for field in PUBKEY_FIELDS:
-            filter_key = filter_key | tx_df[field].apply(lambda x: guarded_convert(x) == address)
+            filter_key = filter_key | transaction_df[field].apply(lambda x: guarded_convert(x) == address)
         for field in ADDR_FIELDS:
-            filter_key = filter_key | (tx_df[field] == address)
+            filter_key = filter_key | (transaction_df[field] == address)
 
-    if tx_types is not None:
+    if transaction_types is not None:
         if filter_key is None:
-            filter_key = pd.Series(True, index=tx_df.index)
-        filter_key = filter_key & tx_df['type'].isin(tx_types)
+            filter_key = pd.Series(True, index=transaction_df.index)
+        filter_key = filter_key & transaction_df['type'].isin(transaction_types)
 
-    return tx_df[filter_key]
+    return transaction_df[filter_key]
 
 
-def process_tx_file(tx_file, address=None, tx_types=None, start_datetime='1900-01-01', end_datetime='2200-01-01'):
-    tx_chunks = pd.read_csv(tx_file, index_col=0, parse_dates=True, chunksize=10000)
+def process_tx_file(transaction_file, address=None, transaction_types=None, start_datetime='1900-01-01', end_datetime='2200-01-01'):
+    """Read a processed transaction file, then stream chunks through filter"""
+    transaction_chunks = pd.read_csv(transaction_file, index_col=0, parse_dates=True, chunksize=10000)
     filtered = []
-    for chunk in tx_chunks:
-        filtered.append(filter_transactions(chunk, address, tx_types, start_datetime, end_datetime))
+    for chunk in transaction_chunks:
+        filtered.append(filter_transactions(chunk, address, transaction_types, start_datetime, end_datetime))
     return pd.concat(filtered, axis=0)
 
 
@@ -231,20 +234,21 @@ def decode_msgpack(packed_data):
 def main(args):
     # pylint: disable=too-many-locals, consider-using-with
 
-    h_writer = csv.DictWriter(
+    header_writer = csv.DictWriter(
         open(os.path.join(args.output, args.header_save_path), 'a' if args.append else 'w', encoding='utf8'),
         HEADER_KEYS,
         extrasaction='ignore',
         escapechar='\\',
         quoting=csv.QUOTE_MINIMAL)
 
-    tx_writer = csv.DictWriter(
+    transaction_writer = csv.DictWriter(
         open(os.path.join(args.output, args.tx_save_path), 'a' if args.append else 'w', encoding='utf8'),
         TX_KEYS,
         extrasaction='ignore',
         escapechar='\\',
         quoting=csv.QUOTE_MINIMAL)
 
+    # build a raw bytes unpacker; unicode errors ignored as tx serialization is not always valid unicode text
     unpacker = msgpack.Unpacker(open(args.input, 'rb'), unicode_errors=None, raw=True)
 
     final_height = 0
@@ -259,20 +263,20 @@ def main(args):
         for _ in range(final_height):
             unpacker.skip()
     else:
-        h_writer.writeheader()
-        tx_writer.writeheader()
+        header_writer.writeheader()
+        transaction_writer.writeheader()
 
     for block in tqdm(unpacker, total=args.total-final_height):
         block = decode_msgpack(block)
 
         header = get_block_stats(block)
         header['timestamp'] = pd.to_datetime(header['timestamp'], origin=pd.to_datetime('2021-03-16 00:06:25'), unit='ms')
-        h_writer.writerow(header)
+        header_writer.writerow(header)
 
         transactions = get_tx_stats(block)
-        for txn in transactions:
-            txn['timestamp'] = pd.to_datetime(txn['timestamp'], origin=pd.to_datetime('2021-03-16 00:06:25'), unit='ms')
-        tx_writer.writerows(transactions)
+        for transaction in transactions:
+            transaction['timestamp'] = pd.to_datetime(transaction['timestamp'], origin=pd.to_datetime('2021-03-16 00:06:25'), unit='ms')
+        transaction_writer.writerows(transactions)
 
 
 def parse_args(argv):

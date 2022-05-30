@@ -71,8 +71,11 @@ Example: extract data from node files stored in `block/data`
 Default output dir is `block/resources`
 
 ```sh
-python extractor/extract.py --input data --output resources
+python extractor/extract.py --input data --output resources --stream
 ```
+
+The --stream flag will stream block data and write a single output at a time, which dramatically reduces memory footprint at the cost of significantly slower processing. 
+Without this flag the extractor is extremely memory intensive as it loads the entire chain state representation into memory; omit at your own risk.
 
 ### extractor/process
 

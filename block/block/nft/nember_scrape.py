@@ -14,15 +14,12 @@ from block.extractor import public_key_to_address
 nest_asyncio.apply()
 
 
-# list of all of the nodes we're going to spam with GET requests
+# list of all of the default nodes we're going to spam with GET requests
 nodes = [
-    'ngl-dual-001.symbolblockchain.io',
-    'ngl-dual-101.symbolblockchain.io',
-    'ngl-dual-201.symbolblockchain.io',
-    'ngl-dual-301.symbolblockchain.io',
-    'ngl-dual-401.symbolblockchain.io',
-    'ngl-dual-501.symbolblockchain.io',
-    'ngl-dual-601.symbolblockchain.io',
+    'wolf.importance.jp',
+    'xym50.allnodes.me',
+    'xym900.allnodes.me',
+    'xym168.allnodes.me'
 ]
 
 
