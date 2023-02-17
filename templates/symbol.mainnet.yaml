@@ -10,3 +10,5 @@ accounts:
 
 nodes:
   - host: xym118.allnodes.me
+  - host: wolf.importance.jp
+  - host: xym99.allnodes.me

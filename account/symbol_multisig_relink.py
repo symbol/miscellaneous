@@ -40,10 +40,8 @@ class RelinkPreparer(BasePreparer):
                 })
 
         aggregate_transaction = aggregate_builder.build(transaction_dict['fee_multiplier'], {'deadline': deadline})
-        currency_mosaic = aggregate_transaction.transactions[0].mosaics[0]
-        currency_mosaic.amount = aggregate_transaction.fee
-        currency_mosaic.mosaic_id = UnresolvedMosaicId(transaction_dict['fee_mosaic_id'])
-        aggregate_transaction.transactions[0].mosaics[0] = currency_mosaic
+        aggregate_transaction.transactions[0].mosaics[0].amount = aggregate_transaction.fee
+        aggregate_transaction.transactions[0].mosaics[0].mosaic_id = UnresolvedMosaicId(transaction_dict['fee_mosaic_id'])
         return aggregate_transaction
 
     @staticmethod

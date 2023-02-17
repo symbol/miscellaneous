@@ -26,8 +26,8 @@ class SymbolAggregateBuilder:
             'transactions': self.embedded_transactions
         })
 
-        aggregate_transaction.fee = Amount((aggregate_transaction.size + len(self.cosignatory_key_pairs) * COSIGNATURE_SIZE) *
-                                           fee_multiplier)
+        aggregate_transaction_size = aggregate_transaction.size + len(self.cosignatory_key_pairs) * COSIGNATURE_SIZE
+        aggregate_transaction.fee = Amount(aggregate_transaction_size * fee_multiplier)
         return aggregate_transaction
 
     def sign(self, aggregate_transaction):

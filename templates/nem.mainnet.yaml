@@ -10,3 +10,5 @@ accounts:
 
 nodes:
   - host: xem43.allnodes.me
+  - host: xem11.allnodes.me
+  - host: hachi.nem.ninja

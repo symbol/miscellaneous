@@ -19,12 +19,10 @@ class TransferPreparer(BasePreparer):
         if self._is_symbol_transfer(transaction_dict):
             if not self._is_symbol_multisig(transaction_dict):
                 currency_mosaic = transfer_sweep.mosaics[0]
-                currency_mosaic.amount = Amount(currency_mosaic.amount.value - total_fee)
-                transfer_sweep.mosaics[0] = currency_mosaic
+                transfer_sweep.mosaics[0].amount = Amount(currency_mosaic.amount.value - total_fee)
             else:
                 currency_mosaic = transfer_sweep.transactions[1].mosaics[0]
-                currency_mosaic.amount = Amount(currency_mosaic.amount.value - total_fee)
-                transfer_sweep.transactions[1].mosaics[0] = currency_mosaic
+                transfer_sweep.transactions[1].mosaics[0].amount = Amount(currency_mosaic.amount.value - total_fee)
 
         else:
             transfer_sweep.amount = Amount(transfer_sweep.amount.value - total_fee)
@@ -77,9 +75,7 @@ class TransferPreparer(BasePreparer):
         aggregate_builder.add_embedded_transaction(properties)
 
         aggregate_transaction = aggregate_builder.build(transaction_dict['fee_multiplier'], {'deadline': deadline})
-        currency_mosaic = aggregate_transaction.transactions[0].mosaics[0]
-        currency_mosaic.amount = aggregate_transaction.fee
-        aggregate_transaction.transactions[0].mosaics[0] = currency_mosaic
+        aggregate_transaction.transactions[0].mosaics[0].amount = aggregate_transaction.fee
         return aggregate_transaction
 
     def _to_transfer_properties(self, signer_public_key, amount, transaction_dict):
