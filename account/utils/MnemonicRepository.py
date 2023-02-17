@@ -1,7 +1,7 @@
 from collections import namedtuple
 
-from symbolchain.core.Bip32 import Bip32
-from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.Bip32 import Bip32
+from symbolchain.CryptoTypes import PublicKey
 
 MnemonicDescriptor = namedtuple('MnemonicDescriptor', ['phrase', 'passphrase'])
 

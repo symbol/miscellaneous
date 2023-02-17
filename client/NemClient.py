@@ -1,6 +1,6 @@
-from symbolchain.core.CryptoTypes import Hash256, PublicKey
-from symbolchain.core.nem.Network import Address, Network
-from symbolchain.core.nem.NetworkTimestamp import NetworkTimestamp
+from symbolchain.CryptoTypes import Hash256, PublicKey
+from symbolchain.nem.Network import Address, Network
+from symbolchain.nem.NetworkTimestamp import NetworkTimestamp
 
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session

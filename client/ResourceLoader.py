@@ -2,10 +2,10 @@ import random
 from collections import namedtuple
 
 import yaml
-from symbolchain.core.AccountDescriptorRepository import AccountDescriptorRepository
-from symbolchain.core.facade.NemFacade import NemFacade
-from symbolchain.core.facade.SymbolFacade import SymbolFacade
-from symbolchain.core.NodeDescriptorRepository import NodeDescriptorRepository
+from symbolchain.AccountDescriptorRepository import AccountDescriptorRepository
+from symbolchain.facade.NemFacade import NemFacade
+from symbolchain.facade.SymbolFacade import SymbolFacade
+from symbolchain.NodeDescriptorRepository import NodeDescriptorRepository
 
 from .NemClient import NemClient
 from .SymbolClient import SymbolClient

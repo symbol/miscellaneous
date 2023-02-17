@@ -4,11 +4,11 @@ from binascii import unhexlify
 from collections import namedtuple
 from pathlib import Path
 
-from symbolchain.core.BufferReader import BufferReader
-from symbolchain.core.BufferWriter import BufferWriter
-from symbolchain.core.CryptoTypes import Hash256, PublicKey
-from symbolchain.core.symbol.Network import Address, Network
-from symbolchain.core.symbol.NetworkTimestamp import NetworkTimestamp
+from symbolchain.BufferReader import BufferReader
+from symbolchain.BufferWriter import BufferWriter
+from symbolchain.CryptoTypes import Hash256, PublicKey
+from symbolchain.symbol.Network import Address, Network
+from symbolchain.symbol.NetworkTimestamp import NetworkTimestamp
 from zenlog import log
 
 from .pod import TransactionSnapshot
@@ -181,13 +181,13 @@ class SymbolClient:
         json_response = self._get_json('node/peers')
         return json_response
 
-    def get_account_info(self, address):
+    def get_account_info(self, address, mosaic_id=None):
         json_response = self._get_json(f'accounts/{address}')
         if 'code' in json_response:
             log.warning(f'unable to retrieve account info for account {address}')
             return None
 
-        return self._parse_account_info(json_response['account'])
+        return self._parse_account_info(json_response['account'], mosaic_id)
 
     def get_richlist_account_infos(self, page_number, page_size, mosaic_id):
         url = f'accounts?pageNumber={page_number}&pageSize={page_size}&order=desc&orderBy=balance&mosaicId={mosaic_id}'

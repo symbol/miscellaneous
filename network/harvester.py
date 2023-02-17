@@ -10,6 +10,8 @@ from client.ResourceLoader import create_blockchain_facade, load_resources, loca
 
 from .PeersMapBuilder import EMPTY_NODE_DESCRIPTOR, PeersMapBuilder
 
+MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
+
 
 class HarvesterDescriptor:
     def __init__(self):
@@ -23,7 +25,7 @@ class HarvesterDescriptor:
 class BatchDownloader:
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, resources, thread_count):
+    def __init__(self, resources, thread_count, mosaic_id):
         self.resources = resources
         self.thread_count = thread_count
         self.nodes = self.resources.nodes.find_all_not_by_role('seed-only')
@@ -35,6 +37,7 @@ class BatchDownloader:
         self.api_clients = []
         self.public_key_to_descriptor_map = {}
         self.lock = Lock()
+        self.mosaic_id = mosaic_id
 
     def download_all(self, num_blocks):
         for node_descriptor in self.nodes:
@@ -100,7 +103,7 @@ class BatchDownloader:
             account_info = api_client.get_account_info(address, forwarded=True)
         if 'Remote' == account_info.remote_status:  # symbol
             main_address = self.facade.network.public_key_to_address(account_info.linked_public_key)
-            account_info = api_client.get_account_info(main_address)
+            account_info = api_client.get_account_info(main_address, self.mosaic_id)
 
         return (account_info.address, account_info.public_key, account_info.balance)
 
@@ -113,12 +116,12 @@ class HarvesterDownloader:
 
         self.peers_map = {}
 
-    def download(self, thread_count, output_filepath):
+    def download(self, thread_count, output_filepath, mosaic_id):
         self.peers_map = self._build_peers_map()
 
         log.info(f'downloading harvester activity to {output_filepath} for last {self.num_blocks} blocks')
 
-        batch_downloader = BatchDownloader(self.resources, thread_count)
+        batch_downloader = BatchDownloader(self.resources, thread_count, mosaic_id)
         batch_downloader.download_all(self.num_blocks)
 
         with open(output_filepath, 'wt', encoding='utf8') as outfile:
@@ -155,12 +158,13 @@ def main():
     parser.add_argument('--nodes', help='(optional) nodes json file')
     parser.add_argument('--output', help='output file', required=True)
     parser.add_argument('--thread-count', help='number of threads', type=int, default=16)
+    parser.add_argument('--mosaic-id', help='mosaic id', default=MAINNET_XYM_MOSAIC_ID)
     args = parser.parse_args()
 
     resources = load_resources(args.resources)
     blocks_per_day = 60 if 'nem' == resources.friendly_name else 120
     downloader = HarvesterDownloader(resources, int(args.days * 24 * blocks_per_day), args.nodes)
-    downloader.download(args.thread_count, args.output)
+    downloader.download(args.thread_count, args.output, args.mosaic_id)
 
 
 if '__main__' == __name__:

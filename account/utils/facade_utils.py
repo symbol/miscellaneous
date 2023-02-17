@@ -2,8 +2,8 @@ from collections import namedtuple
 from pathlib import Path
 
 import yaml
-from symbolchain.core.facade.NemFacade import NemFacade
-from symbolchain.core.facade.SymbolFacade import SymbolFacade
+from symbolchain.facade.NemFacade import NemFacade
+from symbolchain.facade.SymbolFacade import SymbolFacade
 from zenlog import log
 
 from .KeyPairRepository import KeyPairRepository
@@ -17,7 +17,7 @@ def create_blockchain_facade(blockchain_descriptor):
 
 
 def save_transaction(facade, transaction, signature, output_directory, name):
-    prepared_transaction_payload = facade.transaction_factory.attach_signature(transaction, signature)
+    facade.transaction_factory.attach_signature(transaction, signature)
 
     log.info(f'*** {name} ***')
     log.debug(transaction)
@@ -29,7 +29,7 @@ def save_transaction(facade, transaction, signature, output_directory, name):
     log.info(f'saving "{name}" to "{output_filepath}"')
 
     with open(output_filepath, 'wb') as outfile:
-        outfile.write(prepared_transaction_payload)
+        outfile.write(transaction.serialize())
 
 
 def main_loop(args, preparer_class, property_name):

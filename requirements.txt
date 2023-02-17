@@ -1,4 +1,4 @@
-PyYAML==5.4.1
-requests==2.26.0
-symbol-sdk-core-python==2.0.1
+PyYAML==6.0
+requests==2.28.2
+symbol-sdk-python==3.0.3
 zenlog==1.1
