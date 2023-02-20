@@ -1,5 +1,7 @@
 import argparse
 
+from symbolchain.sc import Amount
+
 from .utils.facade_utils import BasePreparer, main_loop, save_transaction
 
 
@@ -13,17 +15,17 @@ class TransferPreparer(BasePreparer):
         transfer_seed = self._prepare_transfer(key_pair_repository, seed_amount, transaction_dict)
         transfer_sweep = self._prepare_transfer(key_pair_repository, sweep_amount, transaction_dict)
 
-        total_fee = transfer_seed.fee + transfer_sweep.fee
+        total_fee = transfer_seed.fee.value + transfer_sweep.fee.value
         if self._is_symbol_transfer(transaction_dict):
             if not self._is_symbol_multisig(transaction_dict):
                 currency_mosaic = transfer_sweep.mosaics[0]
-                transfer_sweep.mosaics[0] = (currency_mosaic[0], currency_mosaic[1] - total_fee)
+                transfer_sweep.mosaics[0].amount = Amount(currency_mosaic.amount.value - total_fee)
             else:
                 currency_mosaic = transfer_sweep.transactions[1].mosaics[0]
-                transfer_sweep.transactions[1].mosaics[0] = (currency_mosaic[0], currency_mosaic[1] - total_fee)
+                transfer_sweep.transactions[1].mosaics[0].amount = Amount(currency_mosaic.amount.value - total_fee)
 
         else:
-            transfer_sweep.amount -= total_fee
+            transfer_sweep.amount = Amount(transfer_sweep.amount.value - total_fee)
 
         self._save_transaction(key_pair_repository, transfer_seed, transaction_dict['filename_pattern'].format('seed'))
         self._save_transaction(key_pair_repository, transfer_sweep, transaction_dict['filename_pattern'].format('sweep'))
@@ -35,6 +37,10 @@ class TransferPreparer(BasePreparer):
     @staticmethod
     def _is_symbol_multisig(transaction_dict):
         return 'cosigner_accounts' in transaction_dict
+
+    @staticmethod
+    def _prepare_transfer_mosaic(mosaic_id, amount):
+        return {'mosaic_id': mosaic_id, 'amount': amount}
 
     def _prepare_transfer(self, key_pair_repository, amount, transaction_dict):
         if self._is_symbol_multisig(transaction_dict):
@@ -61,15 +67,15 @@ class TransferPreparer(BasePreparer):
 
         # transfer the fee amount from the multisig account to the (co)signer account
         aggregate_builder.add_embedded_transaction({
-            'type': 'transfer',
+            'type': 'transfer_transaction',
             'signer_public_key': main_public_key,
             'recipient_address': self.facade.network.public_key_to_address(signer_public_key),
-            'mosaics': [(transaction_dict['mosaic_id'], 0)]
+            'mosaics': [self._prepare_transfer_mosaic(transaction_dict['mosaic_id'], 0)]
         })
         aggregate_builder.add_embedded_transaction(properties)
 
         aggregate_transaction = aggregate_builder.build(transaction_dict['fee_multiplier'], {'deadline': deadline})
-        aggregate_transaction.transactions[0].mosaics[0] = (transaction_dict['mosaic_id'], aggregate_transaction.fee)
+        aggregate_transaction.transactions[0].mosaics[0].amount = aggregate_transaction.fee
         return aggregate_transaction
 
     def _to_transfer_properties(self, signer_public_key, amount, transaction_dict):
@@ -77,7 +83,7 @@ class TransferPreparer(BasePreparer):
         self.counter += 1
 
         properties = {
-            'type': 'transfer',
+            'type': 'transfer_transaction',
             'signer_public_key': signer_public_key,
             'deadline': deadline,
 
@@ -88,7 +94,7 @@ class TransferPreparer(BasePreparer):
             properties['message'] = transaction_dict['message']
 
         if self._is_symbol_transfer(transaction_dict):
-            properties['mosaics'] = [(transaction_dict['mosaic_id'], amount)]
+            properties['mosaics'] = [self._prepare_transfer_mosaic(transaction_dict['mosaic_id'], amount)]
         else:
             properties['amount'] = amount
 

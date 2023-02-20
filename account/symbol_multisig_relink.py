@@ -1,6 +1,7 @@
 import argparse
 
-from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.CryptoTypes import PublicKey
+from symbolchain.sc import UnresolvedMosaicId
 
 from .utils.facade_utils import BasePreparer, main_loop, save_transaction
 
@@ -23,10 +24,10 @@ class RelinkPreparer(BasePreparer):
 
         # transfer the fee amount from the multisig account to the (co)signer account
         aggregate_builder.add_embedded_transaction({
-            'type': 'transfer',
+            'type': 'transfer_transaction',
             'signer_public_key': key_pair_repository.main_public_key,
             'recipient_address': self.facade.network.public_key_to_address(signer_public_key),
-            'mosaics': [(transaction_dict['fee_mosaic_id'], 0)]
+            'mosaics': [{'mosaic_id': transaction_dict['fee_mosaic_id'], 'amount': 0}]
         })
 
         # add link transactions
@@ -39,13 +40,14 @@ class RelinkPreparer(BasePreparer):
                 })
 
         aggregate_transaction = aggregate_builder.build(transaction_dict['fee_multiplier'], {'deadline': deadline})
-        aggregate_transaction.transactions[0].mosaics[0] = (transaction_dict['fee_mosaic_id'], aggregate_transaction.fee)
+        aggregate_transaction.transactions[0].mosaics[0].amount = aggregate_transaction.fee
+        aggregate_transaction.transactions[0].mosaics[0].mosaic_id = UnresolvedMosaicId(transaction_dict['fee_mosaic_id'])
         return aggregate_transaction
 
     @staticmethod
     def _to_link_properties(transaction_dict):
         return {
-            'type': 'votingKeyLink',
+            'type': 'voting_key_link_transaction',
             'linked_public_key': PublicKey(transaction_dict['linked_public_key']),
             'start_epoch': transaction_dict['start_epoch'],
             'end_epoch': transaction_dict['end_epoch'],

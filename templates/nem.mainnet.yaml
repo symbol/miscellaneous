@@ -9,4 +9,6 @@ accounts:
   - { address: NA6U4U4Z5J3L5ZKSMZD5DKPWSVT5DASJNO4V5RAA, name: Trading1, roles: [trading] }
 
 nodes:
-  - host: 54.170.97.221
+  - host: xem43.allnodes.me
+  - host: xem11.allnodes.me
+  - host: hachi.nem.ninja

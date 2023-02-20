@@ -5,10 +5,10 @@ import time
 from threading import Lock, Thread
 
 from requests.exceptions import RequestException
-from symbolchain.core.CryptoTypes import PublicKey
-from symbolchain.core.nem.Network import Network as NemNetwork
-from symbolchain.core.Network import NetworkLocator
-from symbolchain.core.symbol.Network import Network as SymbolNetwork
+from symbolchain.CryptoTypes import PublicKey
+from symbolchain.nem.Network import Network as NemNetwork
+from symbolchain.Network import NetworkLocator
+from symbolchain.symbol.Network import Network as SymbolNetwork
 from zenlog import log
 
 from client.ResourceLoader import load_resources, locate_blockchain_client_class

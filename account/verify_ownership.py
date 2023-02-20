@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from symbolchain.core.PrivateKeyStorage import PrivateKeyStorage
+from symbolchain.PrivateKeyStorage import PrivateKeyStorage
 from zenlog import log
 
 from .utils.facade_utils import BlockchainDescriptor, create_blockchain_facade

@@ -19,7 +19,7 @@ transfers:
 
     sweep_amount: 10000000
     seed_amount: 200000
-    message: 'test message'
+    message: { 'message_type': 'plain', 'message': 'test message' }
 
   - blockchain: { name: nem, network: testnet }
     deadline: 204292080  # time-sync/network-time

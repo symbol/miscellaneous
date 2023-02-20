@@ -1,7 +1,7 @@
 import json
 from collections import namedtuple
 
-from symbolchain.core.CryptoTypes import PublicKey
+from symbolchain.CryptoTypes import PublicKey
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_api_client
