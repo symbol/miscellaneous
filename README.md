@@ -11,7 +11,7 @@ Creates an aggregate transaction containing an embedded multisig account modific
 Example: prepare transactions as described in `account/samples/symbol_multisig_create.yaml`.
 
 ```sh
-python -m account.symbol_multisig_create --input account/samples/symbol_multisig_create.yaml
+python3 -m account.symbol_multisig_create --input account/samples/symbol_multisig_create.yaml
 ```
 
 ### symbol_multisig_relink
@@ -23,7 +23,7 @@ Creates an aggregate transaction containing embedded voting key link and/or voti
 Example: prepare transactions as described in `account/samples/symbol_multisig_relink.yaml`.
 
 ```sh
-python -m account.symbol_multisig_relink --input account/samples/symbol_multisig_relink.yaml
+python3 -m account.symbol_multisig_relink --input account/samples/symbol_multisig_relink.yaml
 ```
 
 ### two_part_send
@@ -36,7 +36,7 @@ Phase Two can be used to send the remainder after Phase One succeeds.
 Example: prepare transactions as described in `account/samples/two_part_send.yaml`.
 
 ```sh
-python -m account.two_part_send --input account/samples/two_part_send.yaml
+python3 -m account.two_part_send --input account/samples/two_part_send.yaml
 ```
 
 ### verify_ownership
@@ -48,7 +48,7 @@ Compares BIP32 derivation paths to expected accounts.
 Example: check accounts in `account/samples/verify_ownership.yaml`.
 
 ```sh
-python -m account.verify_ownership --input account/samples/verify_ownership.yaml
+python3 -m account.verify_ownership --input account/samples/verify_ownership.yaml
 ```
 
 ## health
@@ -62,7 +62,7 @@ Prints balance and last harvest information for a set of NEM and/or Symbol accou
 Example: load accounts and nodes from `templates/symbol.mainnet.yaml` and print all accounts with role `core`.
 
 ```sh
-python -m health.check_nem_balances --resources templates/symbol.mainnet.yaml --groups core
+python3 -m health.check_nem_balances --resources templates/symbol.mainnet.yaml --groups core
 ```
 
 ```sh
@@ -90,7 +90,7 @@ Retrieves balance change events for a set of accounts over a specified date rang
 Example: download all June 2021 balance change events for the accounts in `templates/symbol.mainnet.yaml` and save the data in `_histout/raw`.
 
 ```sh
-python -m history.downloader --input templates/symbol.mainnet.yaml --start-date 2021-06-01 --end-date 2021-06-30 --output _histout/raw
+python3 -m history.downloader --input templates/symbol.mainnet.yaml --start-date 2021-06-01 --end-date 2021-06-30 --output _histout/raw
 ```
 
 ### merger
@@ -103,7 +103,7 @@ Example: merge the downloaded data in `_histout/raw` into `_histout/all/full.csv
 
 ```sh
 mkdir -p _histout/all
-python -m history.merger --input _histout/raw --output _histout/all/full.csv --ticker symbol
+python3 -m history.merger --input _histout/raw --output _histout/all/full.csv --ticker symbol
 ```
 
 ### grouper
@@ -123,7 +123,7 @@ Example: Group data in ` _histout/all/full.csv` by `account` and produce a new `
 
 ```sh
 mkdir -p _histout/account
-python -m history.grouper --input _histout/all/full.csv --output _histout/account/grouped.csv --mode account
+python3 -m history.grouper --input _histout/all/full.csv --output _histout/account/grouped.csv --mode account
 ```
 
 ### summarizer
@@ -135,7 +135,7 @@ Produces a balance table from multiple grouped reports denominated in either tok
 Example: Read `account` grouped reports from ` _histout/account` and produce a new `_histout/balances.csv` report.
 
 ```sh
-python -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
+python3 -m history.summarizer --input _histout/account --output _histout/balances.csv --mode account
 ```
 
 ### reconciler
@@ -147,7 +147,7 @@ Compares the account balances in an account balance table with live network bala
 Example: Compare the balances in `_histout/balances.csv` with the `spot` network balances reported by the network described in `templates/symbol.mainnet.yaml`.
 
 ```sh
-python -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot
+python3 -m history.reconciler --input _histout/balances.csv --resources templates/symbol.mainnet.yaml --mode spot
 ```
 
 > :warning: This will only succeed when _all_ balances have been downloaded.
@@ -163,7 +163,7 @@ Downloads information about all accounts that recently harvested a block.
 Example: Retrieve all accounts that have harvested a block in the last \~15 minutes (1% of a day) from the network described in `templates/nem.mainnet.yaml` and save the results to `harvesters.csv`.
 
 ```sh
-python -m network.harvester --resources templates/nem.mainnet.yaml --days 0.01 --output nem_harvesters.csv
+python3 -m network.harvester --resources templates/nem.mainnet.yaml --days 0.01 --output nem_harvesters.csv
 ```
 
 ### nodes
@@ -175,7 +175,7 @@ Crawls the entire network, connecting to each node individually in order to pull
 Example: Discover all nodes connected to the network described in `templates/nem.mainnet.yaml` with a one second peer timeout and save the results to `nemnodes.json`.
 
 ```sh
-python -m network.nodes --resources templates/nem.mainnet.yaml --timeout 1 --output nemnodes.json
+python3 -m network.nodes --resources templates/nem.mainnet.yaml --timeout 1 --output nemnodes.json
 ```
 
 ### richlist_symbol
@@ -187,5 +187,18 @@ Downloads information about all accounts owning a specified mosaic with a balanc
 Example: Retrieve all accounts with balances greater than 50M from the network described in `templates/symbol.mainnet.yaml` and save the results to `50M.csv`.
 
 ```sh
-python -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv
+python3 -m network.richlist_symbol --resources templates/symbol.mainnet.yaml --min-balance 50000000 --output 50M.csv
 ````
+
+### geolocation
+
+_downloads geolocation info from node list_
+
+Retrieve host information from nodes file (generated from network.nodes), convert host names to their corresponding IP addresses, and then make batch requests to IP-API.com to obtain geolocation information for each IP address.
+
+Example: The script can take an input file named `symbolnodes.json`, which contains the host information for a set of nodes, and then use this data to make requests to IP-API.com. The resulting geolocation information save to `geolocation.json`.
+
+
+```sh
+python3 -m network.geolocation --file ./symbolnodes.json --output geolocation.json
+```
