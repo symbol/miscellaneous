@@ -3,6 +3,7 @@ import ssl
 from binascii import unhexlify
 from collections import namedtuple
 from pathlib import Path
+import websocket
 
 from symbolchain.BufferReader import BufferReader
 from symbolchain.BufferWriter import BufferWriter
@@ -198,6 +199,31 @@ class SymbolClient:
             account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
 
         return account_infos
+
+    def is_https_valid(self):
+        try:
+            url = f'https://{self.node_host}:3001/node/info'
+            self.session.get(url, timeout=5)
+            return True
+        except:
+            return False
+
+    def is_wss_valid(self):
+        try:
+            url = f'wss://{self.node_host}:3001/ws'
+            ws = websocket.create_connection(url, timeout=5)
+            ws.close()
+            return True
+        except:
+            return False
+
+    def get_rest_version(self):
+        json_response = self._get_json('node/server')
+        return json_response['serverInfo']['restVersion']
+
+    def is_node_health(self):
+        json_response = self._get_json('node/health')
+        return all([json_response['status']['apiNode'] == 'up',  json_response['status']['db'] == 'up'])
 
     @staticmethod
     def _parse_account_info(json_account, mosaic_id=None):
