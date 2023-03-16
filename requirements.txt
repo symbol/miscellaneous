@@ -2,3 +2,5 @@ PyYAML==6.0.1
 requests==2.32.3
 symbol-sdk-python==3.2.0
 zenlog==1.1
+websocket==0.2.1
+websocket-client==1.5.1
