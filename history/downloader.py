@@ -11,124 +11,124 @@ from client.ResourceLoader import create_blockchain_api_client, load_resources
 
 
 class ChainActivityDownloader:
-    def __init__(self, resources, account_descriptor):
-        self.resources = resources
-        self.account_descriptor = account_descriptor
+	def __init__(self, resources, account_descriptor):
+		self.resources = resources
+		self.account_descriptor = account_descriptor
 
-    def download(self, start_date, end_date, output_filepath):
-        log.info(f'[{output_filepath}] downloading chain activity from {start_date} to {end_date}')
+	def download(self, start_date, end_date, output_filepath):
+		log.info(f'[{output_filepath}] downloading chain activity from {start_date} to {end_date}')
 
-        with open(output_filepath, 'wt', encoding='utf8') as outfile:
-            column_names = ['timestamp', 'amount', 'fee_paid', 'height', 'address', 'address_name', 'tag', 'comments', 'hash']
-            csv_writer = csv.DictWriter(outfile, column_names, extrasaction='ignore')
-            csv_writer.writeheader()
+		with open(output_filepath, 'wt', encoding='utf8') as outfile:
+			column_names = ['timestamp', 'amount', 'fee_paid', 'height', 'address', 'address_name', 'tag', 'comments', 'hash']
+			csv_writer = csv.DictWriter(outfile, column_names, extrasaction='ignore')
+			csv_writer.writeheader()
 
-            num_rows_written = 0
-            for mode in ['harvests', 'transfers']:
-                num_rows_written += self._download_batch(mode, start_date, end_date, output_filepath, csv_writer)
+			num_rows_written = 0
+			for mode in ['harvests', 'transfers']:
+				num_rows_written += self._download_batch(mode, start_date, end_date, output_filepath, csv_writer)
 
-        if not num_rows_written:
-            Path(output_filepath).unlink()
+		if not num_rows_written:
+			Path(output_filepath).unlink()
 
-    def _download_batch(self, mode, start_date, end_date, output_filepath, csv_writer):
-        # pylint: disable=too-many-arguments
+	def _download_batch(self, mode, start_date, end_date, output_filepath, csv_writer):
+		# pylint: disable=too-many-arguments
 
-        api_client = create_blockchain_api_client(self.resources)
-        downloader = api_client.get_harvests if 'harvests' == mode else api_client.get_transfers
+		api_client = create_blockchain_api_client(self.resources)
+		downloader = api_client.get_harvests if 'harvests' == mode else api_client.get_transfers
 
-        num_rows_written = 0
-        start_id = None
-        while True:
-            snapshots = downloader(self.account_descriptor.address, start_id)
-            if not snapshots:
-                return num_rows_written
+		num_rows_written = 0
+		start_id = None
+		while True:
+			snapshots = downloader(self.account_descriptor.address, start_id)
+			if not snapshots:
+				return num_rows_written
 
-            for snapshot in snapshots:
-                if snapshot.timestamp.date() < start_date:
-                    return num_rows_written
+			for snapshot in snapshots:
+				if snapshot.timestamp.date() < start_date:
+					return num_rows_written
 
-                if snapshot.timestamp.date() > end_date:
-                    continue
+				if snapshot.timestamp.date() > end_date:
+					continue
 
-                snapshot.address_name = self.account_descriptor.name
-                csv_writer.writerow(vars(snapshot))
-                num_rows_written += 1
+				snapshot.address_name = self.account_descriptor.name
+				csv_writer.writerow(vars(snapshot))
+				num_rows_written += 1
 
-            start_id = snapshots[-1].collation_id
+			start_id = snapshots[-1].collation_id
 
-            log.debug(f'[{output_filepath}::{mode}] finished processing {snapshots[-1].timestamp}')
+			log.debug(f'[{output_filepath}::{mode}] finished processing {snapshots[-1].timestamp}')
 
 
 class PriceDownloader:
-    def __init__(self, resources, fiat_currency):
-        self.resources = resources
-        self.fiat_currency = fiat_currency
+	def __init__(self, resources, fiat_currency):
+		self.resources = resources
+		self.fiat_currency = fiat_currency
 
-    def download(self, start_date, end_date, output_filepath):
-        log.info(f'[{output_filepath}] downloading prices from {start_date} to {end_date}')
+	def download(self, start_date, end_date, output_filepath):
+		log.info(f'[{output_filepath}] downloading prices from {start_date} to {end_date}')
 
-        coin_gecko_client = CoinGeckoClient()
+		coin_gecko_client = CoinGeckoClient()
 
-        with open(output_filepath, 'wt', encoding='utf8') as outfile:
-            csv_writer = csv.DictWriter(outfile, ['date', 'price', 'volume', 'market_cap', 'comments'])
-            csv_writer.writeheader()
+		with open(output_filepath, 'wt', encoding='utf8') as outfile:
+			csv_writer = csv.DictWriter(outfile, ['date', 'price', 'volume', 'market_cap', 'comments'])
+			csv_writer.writeheader()
 
-            current_date = start_date
-            while current_date <= end_date:
-                snapshot = coin_gecko_client.get_price_snapshot(current_date, self.resources.ticker_name, self.fiat_currency)
-                if 'no price data available' == snapshot.comments:
-                    snapshot.price = self.resources.premarket_price
-                    snapshot.comments = 'premarket price'
+			current_date = start_date
+			while current_date <= end_date:
+				snapshot = coin_gecko_client.get_price_snapshot(current_date, self.resources.ticker_name, self.fiat_currency)
+				if 'no price data available' == snapshot.comments:
+					snapshot.price = self.resources.premarket_price
+					snapshot.comments = 'premarket price'
 
-                csv_writer.writerow(vars(snapshot))
+				csv_writer.writerow(vars(snapshot))
 
-                log.debug(f'[{output_filepath}] finished processing {current_date}')
+				log.debug(f'[{output_filepath}] finished processing {current_date}')
 
-                current_date += datetime.timedelta(days=1)
+				current_date += datetime.timedelta(days=1)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='download transactions from nem or symbol networks',
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--input', help='input resources file', required=True)
-    parser.add_argument('--output', help='output directory', required=True)
-    parser.add_argument('--start-date', help='start date', required=True)
-    parser.add_argument('--end-date', help='end date', default=datetime.date.today().isoformat())
-    parser.add_argument('--fiat-currency', help='fiat currency', default='usd')
-    args = parser.parse_args()
+	parser = argparse.ArgumentParser(
+		description='download transactions from nem or symbol networks',
+		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument('--input', help='input resources file', required=True)
+	parser.add_argument('--output', help='output directory', required=True)
+	parser.add_argument('--start-date', help='start date', required=True)
+	parser.add_argument('--end-date', help='end date', default=datetime.date.today().isoformat())
+	parser.add_argument('--fiat-currency', help='fiat currency', default='usd')
+	args = parser.parse_args()
 
-    output_directory = Path(args.output)
-    if output_directory.exists():
-        log.warn(f'output directory \'{args.output}\' already exists')
-        return
+	output_directory = Path(args.output)
+	if output_directory.exists():
+		log.warn(f'output directory \'{args.output}\' already exists')
+		return
 
-    log.info('starting downloads!')
+	log.info('starting downloads!')
 
-    output_directory.mkdir(parents=True)
+	output_directory.mkdir(parents=True)
 
-    resources = load_resources(args.input)
-    start_date = datetime.date.fromisoformat(args.start_date)
-    end_date = datetime.date.fromisoformat(args.end_date)
+	resources = load_resources(args.input)
+	start_date = datetime.date.fromisoformat(args.start_date)
+	end_date = datetime.date.fromisoformat(args.end_date)
 
-    threads = []
-    for account_descriptor in resources.accounts.find_all_by_role(None):
-        chain_activity_downloader = ChainActivityDownloader(resources, account_descriptor)
-        account_output_filepath = output_directory / f'{account_descriptor.name}.csv'
-        threads.append(Thread(target=chain_activity_downloader.download, args=(start_date, end_date, account_output_filepath)))
+	threads = []
+	for account_descriptor in resources.accounts.find_all_by_role(None):
+		chain_activity_downloader = ChainActivityDownloader(resources, account_descriptor)
+		account_output_filepath = output_directory / f'{account_descriptor.name}.csv'
+		threads.append(Thread(target=chain_activity_downloader.download, args=(start_date, end_date, account_output_filepath)))
 
-    price_downloader = PriceDownloader(resources, args.fiat_currency)
-    price_output_filepath = output_directory / f'{resources.ticker_name}_{args.fiat_currency}.csv'
-    threads.append(Thread(target=price_downloader.download, args=(start_date, end_date, price_output_filepath)))
+	price_downloader = PriceDownloader(resources, args.fiat_currency)
+	price_output_filepath = output_directory / f'{resources.ticker_name}_{args.fiat_currency}.csv'
+	threads.append(Thread(target=price_downloader.download, args=(start_date, end_date, price_output_filepath)))
 
-    for thread in threads:
-        thread.start()
+	for thread in threads:
+		thread.start()
 
-    for thread in threads:
-        thread.join()
+	for thread in threads:
+		thread.join()
 
-    log.info('all downloads complete!')
+	log.info('all downloads complete!')
 
 
 if '__main__' == __name__:
-    main()
+	main()

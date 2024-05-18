@@ -18,345 +18,345 @@ VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'pu
 
 
 XYM_NETWORK_MOSAIC_IDS_MAP = {
-    0x68: '6BED913FA20223F8',
-    0x98: '3A8416DB2D53B6C8',
-    'alias': 'E74B99BA41F4AFEE'
+	0x68: '6BED913FA20223F8',
+	0x98: '3A8416DB2D53B6C8',
+	'alias': 'E74B99BA41F4AFEE'
 }
 
 MICROXYM_PER_XYM = 1000000.0
 RECEIPT_TYPES = {
-    'harvest': 0x2143,
-    'inflation': 0x5143,
-    'hashlock_expired': 0x2348,
-    'secretlock_expired': 0x2352,
-    'mosaic_expiry': 0x414D,
-    'namespace_expiry': 0x414E
+	'harvest': 0x2143,
+	'inflation': 0x5143,
+	'hashlock_expired': 0x2348,
+	'secretlock_expired': 0x2352,
+	'mosaic_expiry': 0x414D,
+	'namespace_expiry': 0x414E
 }
 TRANSACTION_TYPES = {
-    'transfer': 0x4154,
-    'aggregate_complete': 0x4141,
-    'aggregate_bonded': 0x4241
+	'transfer': 0x4154,
+	'aggregate_complete': 0x4141,
+	'aggregate_bonded': 0x4241
 }
 
 
 class AccountInfo:
-    def __init__(self, address):
-        self.address = address
-        self.address_name = address
+	def __init__(self, address):
+		self.address = address
+		self.address_name = address
 
-        self.balance = 0
-        self.public_key = None
-        self.importance = 0.0
+		self.balance = 0
+		self.public_key = None
+		self.importance = 0.0
 
-        self.remote_status = None
-        self.linked_public_key = None
-        self.voting_public_keys = []
+		self.remote_status = None
+		self.linked_public_key = None
+		self.voting_public_keys = []
 
 
 class SymbolPeerClient:
-    def __init__(self, host, port=7890, **kwargs):
-        (self.node_host, self.node_port) = (host, port)
-        self.certificate_directory = Path(kwargs.get('certificate_directory'))
-        self.timeout = kwargs.get('timeout', 10)
+	def __init__(self, host, port=7890, **kwargs):
+		(self.node_host, self.node_port) = (host, port)
+		self.certificate_directory = Path(kwargs.get('certificate_directory'))
+		self.timeout = kwargs.get('timeout', 10)
 
-        self.ssl_context = ssl.create_default_context()
-        self.ssl_context.check_hostname = False
-        self.ssl_context.verify_mode = ssl.CERT_NONE
-        self.ssl_context.load_cert_chain(
-            self.certificate_directory / 'node.full.crt.pem',
-            keyfile=self.certificate_directory / 'node.key.pem')
+		self.ssl_context = ssl.create_default_context()
+		self.ssl_context.check_hostname = False
+		self.ssl_context.verify_mode = ssl.CERT_NONE
+		self.ssl_context.load_cert_chain(
+			self.certificate_directory / 'node.full.crt.pem',
+			keyfile=self.certificate_directory / 'node.key.pem')
 
-    def get_chain_height(self):
-        return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
+	def get_chain_height(self):
+		return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
 
-    def get_finalization_info(self):
-        # epoch and point are zeroed for now
-        return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
+	def get_finalization_info(self):
+		# epoch and point are zeroed for now
+		return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
 
-    def get_node_info(self):
-        return self._send_socket_request(0x111, self._parse_node_info_response)
+	def get_node_info(self):
+		return self._send_socket_request(0x111, self._parse_node_info_response)
 
-    @staticmethod
-    def get_peers():
-        # not implemented
-        return []
+	@staticmethod
+	def get_peers():
+		# not implemented
+		return []
 
-    def _send_socket_request(self, packet_type, parser):
-        try:
-            with socket.create_connection((self.node_host, self.node_port), self.timeout) as sock:
-                with self.ssl_context.wrap_socket(sock) as ssock:
-                    self._send_simple_request(ssock, packet_type)
-                    return parser(self._read_simple_response(ssock))
-        except socket.timeout as ex:
-            raise ConnectionRefusedError from ex
+	def _send_socket_request(self, packet_type, parser):
+		try:
+			with socket.create_connection((self.node_host, self.node_port), self.timeout) as sock:
+				with self.ssl_context.wrap_socket(sock) as ssock:
+					self._send_simple_request(ssock, packet_type)
+					return parser(self._read_simple_response(ssock))
+		except socket.timeout as ex:
+			raise ConnectionRefusedError from ex
 
-    @staticmethod
-    def _send_simple_request(ssock, packet_type):
-        writer = BufferWriter()
-        writer.write_int(8, 4)
-        writer.write_int(packet_type, 4)
-        ssock.send(writer.buffer)
+	@staticmethod
+	def _send_simple_request(ssock, packet_type):
+		writer = BufferWriter()
+		writer.write_int(8, 4)
+		writer.write_int(packet_type, 4)
+		ssock.send(writer.buffer)
 
-    def _read_simple_response(self, ssock):
-        read_buffer = ssock.read()
+	def _read_simple_response(self, ssock):
+		read_buffer = ssock.read()
 
-        if 0 == len(read_buffer):
-            raise ConnectionRefusedError(f'socket returned empty data for {self.node_host}')
+		if 0 == len(read_buffer):
+			raise ConnectionRefusedError(f'socket returned empty data for {self.node_host}')
 
-        size = BufferReader(read_buffer).read_int(4)
+		size = BufferReader(read_buffer).read_int(4)
 
-        while len(read_buffer) < size:
-            read_buffer = b''.join([read_buffer, ssock.read()])
+		while len(read_buffer) < size:
+			read_buffer = b''.join([read_buffer, ssock.read()])
 
-        reader = BufferReader(read_buffer)
-        reader.read_int(8)  # packet header
-        return reader
+		reader = BufferReader(read_buffer)
+		reader.read_int(8)  # packet header
+		return reader
 
-    @staticmethod
-    def _parse_chain_statistics_response(reader):
-        chain_statistics = {}
+	@staticmethod
+	def _parse_chain_statistics_response(reader):
+		chain_statistics = {}
 
-        chain_statistics['height'] = reader.read_int(8)
-        chain_statistics['finalizedHeight'] = reader.read_int(8)
-        chain_statistics['scoreHigh'] = reader.read_int(8)
-        chain_statistics['scoreLow'] = reader.read_int(8)
+		chain_statistics['height'] = reader.read_int(8)
+		chain_statistics['finalizedHeight'] = reader.read_int(8)
+		chain_statistics['scoreHigh'] = reader.read_int(8)
+		chain_statistics['scoreLow'] = reader.read_int(8)
 
-        return chain_statistics
+		return chain_statistics
 
-    @staticmethod
-    def _parse_node_info_response(reader):
-        reader.read_int(4)  # size
+	@staticmethod
+	def _parse_node_info_response(reader):
+		reader.read_int(4)  # size
 
-        node_info = {}
+		node_info = {}
 
-        node_info['version'] = reader.read_int(4)
-        node_info['publicKey'] = PublicKey(reader.read_bytes(32))
-        node_info['networkGenerationHashSeed'] = str(Hash256(reader.read_bytes(32)))
-        node_info['roles'] = reader.read_int(4)
-        node_info['port'] = reader.read_int(2)
-        node_info['networkIdentifier'] = reader.read_int(1)
+		node_info['version'] = reader.read_int(4)
+		node_info['publicKey'] = PublicKey(reader.read_bytes(32))
+		node_info['networkGenerationHashSeed'] = str(Hash256(reader.read_bytes(32)))
+		node_info['roles'] = reader.read_int(4)
+		node_info['port'] = reader.read_int(2)
+		node_info['networkIdentifier'] = reader.read_int(1)
 
-        host_size = reader.read_int(1)
-        name_size = reader.read_int(1)
-        node_info['host'] = reader.read_bytes(host_size).decode('utf8')
-        node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf8')
+		host_size = reader.read_int(1)
+		name_size = reader.read_int(1)
+		node_info['host'] = reader.read_bytes(host_size).decode('utf8')
+		node_info['friendlyName'] = reader.read_bytes(name_size).decode('utf8')
 
-        return node_info
+		return node_info
 
 
 class SymbolClient:
-    def __init__(self, host, port=3000, **kwargs):
-        self.session = create_http_session(**kwargs)
-        (self.node_host, self.node_port) = (host, port)
-        self.network = Network.MAINNET
+	def __init__(self, host, port=3000, **kwargs):
+		self.session = create_http_session(**kwargs)
+		(self.node_host, self.node_port) = (host, port)
+		self.network = Network.MAINNET
 
-    @staticmethod
-    def from_node_info_dict(dict_node_info, **kwargs):
-        if not dict_node_info['roles'] & 2:
-            return SymbolPeerClient(dict_node_info['host'], dict_node_info['port'], **kwargs)
+	@staticmethod
+	def from_node_info_dict(dict_node_info, **kwargs):
+		if not dict_node_info['roles'] & 2:
+			return SymbolPeerClient(dict_node_info['host'], dict_node_info['port'], **kwargs)
 
-        return SymbolClient(dict_node_info['host'], **kwargs)
+		return SymbolClient(dict_node_info['host'], **kwargs)
 
-    def get_chain_height(self):
-        json_response = self._get_json('chain/info')
-        return int(json_response['height'])
+	def get_chain_height(self):
+		json_response = self._get_json('chain/info')
+		return int(json_response['height'])
 
-    def get_finalization_info(self):
-        json_response = self._get_json('chain/info')
-        json_finalization_info = json_response['latestFinalizedBlock']
-        return FinalizationInfo(
-            int(json_finalization_info['finalizationEpoch']),
-            int(json_finalization_info['finalizationPoint']),
-            int(json_finalization_info['height']))
+	def get_finalization_info(self):
+		json_response = self._get_json('chain/info')
+		json_finalization_info = json_response['latestFinalizedBlock']
+		return FinalizationInfo(
+			int(json_finalization_info['finalizationEpoch']),
+			int(json_finalization_info['finalizationPoint']),
+			int(json_finalization_info['height']))
 
-    def get_harvester_signer_public_key(self, height):
-        json_response = self._get_json(f'blocks/{height}')
-        return PublicKey(json_response['block']['signerPublicKey'])
+	def get_harvester_signer_public_key(self, height):
+		json_response = self._get_json(f'blocks/{height}')
+		return PublicKey(json_response['block']['signerPublicKey'])
 
-    def get_node_info(self):
-        json_response = self._get_json('node/info')
-        return json_response
+	def get_node_info(self):
+		json_response = self._get_json('node/info')
+		return json_response
 
-    def get_peers(self):
-        json_response = self._get_json('node/peers')
-        return json_response
+	def get_peers(self):
+		json_response = self._get_json('node/peers')
+		return json_response
 
-    def get_account_info(self, address, mosaic_id=None):
-        json_response = self._get_json(f'accounts/{address}')
-        if 'code' in json_response:
-            log.warning(f'unable to retrieve account info for account {address}')
-            return None
+	def get_account_info(self, address, mosaic_id=None):
+		json_response = self._get_json(f'accounts/{address}')
+		if 'code' in json_response:
+			log.warning(f'unable to retrieve account info for account {address}')
+			return None
 
-        return self._parse_account_info(json_response['account'], mosaic_id)
+		return self._parse_account_info(json_response['account'], mosaic_id)
 
-    def get_richlist_account_infos(self, page_number, page_size, mosaic_id):
-        url = f'accounts?pageNumber={page_number}&pageSize={page_size}&order=desc&orderBy=balance&mosaicId={mosaic_id}'
-        json_response = self._get_json(url)
+	def get_richlist_account_infos(self, page_number, page_size, mosaic_id):
+		url = f'accounts?pageNumber={page_number}&pageSize={page_size}&order=desc&orderBy=balance&mosaicId={mosaic_id}'
+		json_response = self._get_json(url)
 
-        account_infos = []
-        for json_account_container in json_response['data']:
-            account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
+		account_infos = []
+		for json_account_container in json_response['data']:
+			account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
 
-        return account_infos
+		return account_infos
 
-    @staticmethod
-    def _parse_account_info(json_account, mosaic_id=None):
-        account_info = AccountInfo(Address(unhexlify(json_account['address'])))
+	@staticmethod
+	def _parse_account_info(json_account, mosaic_id=None):
+		account_info = AccountInfo(Address(unhexlify(json_account['address'])))
 
-        if not mosaic_id:
-            mosaic_id = XYM_NETWORK_MOSAIC_IDS_MAP[account_info.address.bytes[0]]
+		if not mosaic_id:
+			mosaic_id = XYM_NETWORK_MOSAIC_IDS_MAP[account_info.address.bytes[0]]
 
-        xym_mosaic = next((mosaic for mosaic in json_account['mosaics'] if mosaic['id'] == mosaic_id), None)
-        if xym_mosaic:
-            account_info.balance = int(xym_mosaic['amount']) / MICROXYM_PER_XYM
+		xym_mosaic = next((mosaic for mosaic in json_account['mosaics'] if mosaic['id'] == mosaic_id), None)
+		if xym_mosaic:
+			account_info.balance = int(xym_mosaic['amount']) / MICROXYM_PER_XYM
 
-        account_info.public_key = PublicKey(json_account['publicKey'])
-        account_info.importance = float(json_account['importance']) / (9 * 10 ** 15 - 1)
+		account_info.public_key = PublicKey(json_account['publicKey'])
+		account_info.importance = float(json_account['importance']) / (9 * 10 ** 15 - 1)
 
-        account_info.remote_status = ['Unlinked', 'Main', 'Remote', 'Remote_Unlinked'][json_account['accountType']]
+		account_info.remote_status = ['Unlinked', 'Main', 'Remote', 'Remote_Unlinked'][json_account['accountType']]
 
-        json_supplemental_public_keys = json_account['supplementalPublicKeys']
-        if 'linked' in json_supplemental_public_keys:
-            account_info.linked_public_key = PublicKey(json_supplemental_public_keys['linked']['publicKey'])
+		json_supplemental_public_keys = json_account['supplementalPublicKeys']
+		if 'linked' in json_supplemental_public_keys:
+			account_info.linked_public_key = PublicKey(json_supplemental_public_keys['linked']['publicKey'])
 
-        if 'voting' in json_supplemental_public_keys:
-            account_info.voting_public_keys = [
-                VotingPublicKey(
-                    json_voting_public_key['startEpoch'],
-                    json_voting_public_key['endEpoch'],
-                    PublicKey(json_voting_public_key['publicKey']))
-                for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']
-            ]
+		if 'voting' in json_supplemental_public_keys:
+			account_info.voting_public_keys = [
+				VotingPublicKey(
+					json_voting_public_key['startEpoch'],
+					json_voting_public_key['endEpoch'],
+					PublicKey(json_voting_public_key['publicKey']))
+				for json_voting_public_key in json_supplemental_public_keys['voting']['publicKeys']
+			]
 
-        return account_info
+		return account_info
 
-    def get_voters(self, finalization_epoch):
-        json_response = self._get_json(f'finalization/proof/epoch/{finalization_epoch}')
+	def get_voters(self, finalization_epoch):
+		json_response = self._get_json(f'finalization/proof/epoch/{finalization_epoch}')
 
-        voters_map = {}
-        for json_message_group in json_response['messageGroups']:
-            stage = 'PRECOMMIT' if 1 == json_message_group['stage'] else 'PREVOTE'
-            for json_signature in json_message_group['signatures']:
-                voting_public_key = PublicKey(json_signature['root']['parentPublicKey'])
-                if voting_public_key not in voters_map:
-                    voters_map[voting_public_key] = []
+		voters_map = {}
+		for json_message_group in json_response['messageGroups']:
+			stage = 'PRECOMMIT' if 1 == json_message_group['stage'] else 'PREVOTE'
+			for json_signature in json_message_group['signatures']:
+				voting_public_key = PublicKey(json_signature['root']['parentPublicKey'])
+				if voting_public_key not in voters_map:
+					voters_map[voting_public_key] = []
 
-                voters_map[voting_public_key].append(stage)
+				voters_map[voting_public_key].append(stage)
 
-        return voters_map
+		return voters_map
 
-    def get_harvests(self, address, start_id=None):
-        json_response = self._get_page(f'statements/transaction?targetAddress={address}&order=desc', start_id)
+	def get_harvests(self, address, start_id=None):
+		json_response = self._get_page(f'statements/transaction?targetAddress={address}&order=desc', start_id)
 
-        snapshots = []
-        for json_statement_envelope in json_response['data']:
-            json_statement = json_statement_envelope['statement']
+		snapshots = []
+		for json_statement_envelope in json_response['data']:
+			json_statement = json_statement_envelope['statement']
 
-            snapshot = TransactionSnapshot(address, 'harvest')
-            snapshot.height = int(json_statement['height'])
-            (snapshot.timestamp, _, snapshot.hash) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
+			snapshot = TransactionSnapshot(address, 'harvest')
+			snapshot.height = int(json_statement['height'])
+			(snapshot.timestamp, _, snapshot.hash) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
 
-            for json_receipt in json_statement['receipts']:
-                receipt_type = json_receipt['type']
-                if any(RECEIPT_TYPES[name] == receipt_type for name in ['harvest', 'hashlock_expired', 'secretlock_expired']):
-                    if Address(address) == Address(unhexlify(json_receipt['targetAddress'])):
-                        snapshot.amount += int(json_receipt['amount'])
-                elif receipt_type not in RECEIPT_TYPES.values():
-                    log.warn(f'detected receipt of unknown type 0x{receipt_type:X}')
-                    continue
+			for json_receipt in json_statement['receipts']:
+				receipt_type = json_receipt['type']
+				if any(RECEIPT_TYPES[name] == receipt_type for name in ['harvest', 'hashlock_expired', 'secretlock_expired']):
+					if Address(address) == Address(unhexlify(json_receipt['targetAddress'])):
+						snapshot.amount += int(json_receipt['amount'])
+				elif receipt_type not in RECEIPT_TYPES.values():
+					log.warn(f'detected receipt of unknown type 0x{receipt_type:X}')
+					continue
 
-            snapshot.amount /= MICROXYM_PER_XYM
-            snapshot.collation_id = json_statement_envelope['id']
-            snapshots.append(snapshot)
+			snapshot.amount /= MICROXYM_PER_XYM
+			snapshot.collation_id = json_statement_envelope['id']
+			snapshots.append(snapshot)
 
-        return snapshots
+		return snapshots
 
-    def get_transfers(self, address, start_id=None):
-        json_response = self._get_page(f'transactions/confirmed?address={address}&order=desc&embedded=true', start_id)
+	def get_transfers(self, address, start_id=None):
+		json_response = self._get_page(f'transactions/confirmed?address={address}&order=desc&embedded=true', start_id)
 
-        snapshots = []
-        for json_transaction_and_meta in json_response['data']:
-            json_transaction = json_transaction_and_meta['transaction']
-            json_meta = json_transaction_and_meta['meta']
+		snapshots = []
+		for json_transaction_and_meta in json_response['data']:
+			json_transaction = json_transaction_and_meta['transaction']
+			json_meta = json_transaction_and_meta['meta']
 
-            snapshot = TransactionSnapshot(address, 'transfer')
-            snapshot.height = int(json_meta['height'])
-            (snapshot.timestamp, fee_multiplier, _) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
+			snapshot = TransactionSnapshot(address, 'transfer')
+			snapshot.height = int(json_meta['height'])
+			(snapshot.timestamp, fee_multiplier, _) = self._get_block_time_and_multiplier_and_hash(snapshot.height)
 
-            snapshot.hash = json_meta['hash']
-            (amount_microxym, fee_microxym) = self._process_xym_changes(snapshot, json_transaction, snapshot.hash, fee_multiplier)
+			snapshot.hash = json_meta['hash']
+			(amount_microxym, fee_microxym) = self._process_xym_changes(snapshot, json_transaction, snapshot.hash, fee_multiplier)
 
-            snapshot.amount = amount_microxym / MICROXYM_PER_XYM
-            snapshot.fee_paid = fee_microxym / MICROXYM_PER_XYM
-            snapshot.collation_id = json_transaction_and_meta['id']
-            snapshots.append(snapshot)
+			snapshot.amount = amount_microxym / MICROXYM_PER_XYM
+			snapshot.fee_paid = fee_microxym / MICROXYM_PER_XYM
+			snapshot.collation_id = json_transaction_and_meta['id']
+			snapshots.append(snapshot)
 
-        return snapshots
+		return snapshots
 
-    def _process_xym_changes(self, snapshot, json_transaction, transaction_hash, fee_multiplier):
-        effective_fee = int(json_transaction['size'] * fee_multiplier)
+	def _process_xym_changes(self, snapshot, json_transaction, transaction_hash, fee_multiplier):
+		effective_fee = int(json_transaction['size'] * fee_multiplier)
 
-        amount_microxym = 0
-        fee_microxym = 0
-        transaction_type = json_transaction['type']
-        if self._is_aggregate(transaction_type):
-            json_aggregate_transaction = self._get_json(f'transactions/confirmed/{transaction_hash}')
-            json_embedded_transactions = [
-                json_embedded_transaction_and_meta['transaction']
-                for json_embedded_transaction_and_meta in json_aggregate_transaction['transaction']['transactions']
-            ]
-            amount_microxym = self._calculate_transfer_amount(snapshot.address, json_embedded_transactions)
-        elif TRANSACTION_TYPES['transfer'] == transaction_type:
-            amount_microxym = self._calculate_transfer_amount(snapshot.address, [json_transaction])
-        else:
-            snapshot.comments = f'unsupported transaction of type 0x{transaction_type:X}'
+		amount_microxym = 0
+		fee_microxym = 0
+		transaction_type = json_transaction['type']
+		if self._is_aggregate(transaction_type):
+			json_aggregate_transaction = self._get_json(f'transactions/confirmed/{transaction_hash}')
+			json_embedded_transactions = [
+				json_embedded_transaction_and_meta['transaction']
+				for json_embedded_transaction_and_meta in json_aggregate_transaction['transaction']['transactions']
+			]
+			amount_microxym = self._calculate_transfer_amount(snapshot.address, json_embedded_transactions)
+		elif TRANSACTION_TYPES['transfer'] == transaction_type:
+			amount_microxym = self._calculate_transfer_amount(snapshot.address, [json_transaction])
+		else:
+			snapshot.comments = f'unsupported transaction of type 0x{transaction_type:X}'
 
-        if self._is_signer(snapshot.address, json_transaction):
-            fee_microxym = -effective_fee
+		if self._is_signer(snapshot.address, json_transaction):
+			fee_microxym = -effective_fee
 
-        return (amount_microxym, fee_microxym)
+		return (amount_microxym, fee_microxym)
 
-    def _calculate_transfer_amount(self, address, json_transactions):
-        amount_microxym = 0
-        for json_transaction in json_transactions:
-            if TRANSACTION_TYPES['transfer'] != json_transaction['type']:
-                continue
+	def _calculate_transfer_amount(self, address, json_transactions):
+		amount_microxym = 0
+		for json_transaction in json_transactions:
+			if TRANSACTION_TYPES['transfer'] != json_transaction['type']:
+				continue
 
-            direction = 0
-            if self._is_signer(address, json_transaction):
-                direction = -1
-            elif SymbolClient._is_recipient(address, json_transaction):
-                direction = 1
+			direction = 0
+			if self._is_signer(address, json_transaction):
+				direction = -1
+			elif SymbolClient._is_recipient(address, json_transaction):
+				direction = 1
 
-            for json_mosaic in json_transaction['mosaics']:
-                if json_mosaic['id'] in (XYM_NETWORK_MOSAIC_IDS_MAP[Address(address).bytes[0]], XYM_NETWORK_MOSAIC_IDS_MAP['alias']):
-                    amount_microxym += int(json_mosaic['amount']) * direction
+			for json_mosaic in json_transaction['mosaics']:
+				if json_mosaic['id'] in (XYM_NETWORK_MOSAIC_IDS_MAP[Address(address).bytes[0]], XYM_NETWORK_MOSAIC_IDS_MAP['alias']):
+					amount_microxym += int(json_mosaic['amount']) * direction
 
-        return amount_microxym
+		return amount_microxym
 
-    def _is_signer(self, address, json_transaction):
-        return Address(address) == self.network.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
+	def _is_signer(self, address, json_transaction):
+		return Address(address) == self.network.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
 
-    @staticmethod
-    def _is_recipient(address, json_transaction):
-        return Address(address) == Address(unhexlify(json_transaction['recipientAddress']))
+	@staticmethod
+	def _is_recipient(address, json_transaction):
+		return Address(address) == Address(unhexlify(json_transaction['recipientAddress']))
 
-    @staticmethod
-    def _is_aggregate(transaction_type):
-        return any(TRANSACTION_TYPES[name] == transaction_type for name in ['aggregate_complete', 'aggregate_bonded'])
+	@staticmethod
+	def _is_aggregate(transaction_type):
+		return any(TRANSACTION_TYPES[name] == transaction_type for name in ['aggregate_complete', 'aggregate_bonded'])
 
-    def _get_block_time_and_multiplier_and_hash(self, height):
-        json_block_and_meta = self._get_json(f'blocks/{height}')
-        json_block = json_block_and_meta['block']
-        return (
-            self.network.to_datetime(NetworkTimestamp(int(json_block['timestamp']))),
-            json_block['feeMultiplier'],
-            Hash256(json_block_and_meta['meta']['hash'])
-        )
+	def _get_block_time_and_multiplier_and_hash(self, height):
+		json_block_and_meta = self._get_json(f'blocks/{height}')
+		json_block = json_block_and_meta['block']
+		return (
+			self.network.to_datetime(NetworkTimestamp(int(json_block['timestamp']))),
+			json_block['feeMultiplier'],
+			Hash256(json_block_and_meta['meta']['hash'])
+		)
 
-    def _get_page(self, rest_path, start_id):
-        return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')
+	def _get_page(self, rest_path, start_id):
+		return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')
 
-    def _get_json(self, rest_path):
-        json_http_headers = {'Content-type': 'application/json'}
-        return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
+	def _get_json(self, rest_path):
+		json_http_headers = {'Content-type': 'application/json'}
+		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
