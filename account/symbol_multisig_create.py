@@ -18,7 +18,7 @@ class MultisigPreparer:
         aggregate_builder = SymbolAggregateBuilder(self.facade, signer_key_pair, cosignatory_key_pairs)
 
         aggregate_builder.add_embedded_transaction({
-            'type': 'multisig_account_modification_transaction',
+            'type': 'multisig_account_modification_transaction_v1',
             'signer_public_key': signer_key_pair.public_key,
             'min_approval_delta': int(transaction_dict['min_approval_delta']),
             'min_removal_delta': int(transaction_dict['min_removal_delta']),

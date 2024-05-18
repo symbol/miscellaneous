@@ -7,8 +7,7 @@ from pathlib import Path
 from symbolchain.BufferReader import BufferReader
 from symbolchain.BufferWriter import BufferWriter
 from symbolchain.CryptoTypes import Hash256, PublicKey
-from symbolchain.symbol.Network import Address, Network
-from symbolchain.symbol.NetworkTimestamp import NetworkTimestamp
+from symbolchain.symbol.Network import Address, Network, NetworkTimestamp
 from zenlog import log
 
 from .pod import TransactionSnapshot
@@ -149,6 +148,7 @@ class SymbolClient:
     def __init__(self, host, port=3000, **kwargs):
         self.session = create_http_session(**kwargs)
         (self.node_host, self.node_port) = (host, port)
+        self.network = Network.MAINNET
 
     @staticmethod
     def from_node_info_dict(dict_node_info, **kwargs):
@@ -316,15 +316,14 @@ class SymbolClient:
 
         return (amount_microxym, fee_microxym)
 
-    @staticmethod
-    def _calculate_transfer_amount(address, json_transactions):
+    def _calculate_transfer_amount(self, address, json_transactions):
         amount_microxym = 0
         for json_transaction in json_transactions:
             if TRANSACTION_TYPES['transfer'] != json_transaction['type']:
                 continue
 
             direction = 0
-            if SymbolClient._is_signer(address, json_transaction):
+            if self._is_signer(address, json_transaction):
                 direction = -1
             elif SymbolClient._is_recipient(address, json_transaction):
                 direction = 1
@@ -335,9 +334,8 @@ class SymbolClient:
 
         return amount_microxym
 
-    @staticmethod
-    def _is_signer(address, json_transaction):
-        return Address(address) == Network.MAINNET.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
+    def _is_signer(self, address, json_transaction):
+        return Address(address) == self.network.public_key_to_address(PublicKey(json_transaction['signerPublicKey']))
 
     @staticmethod
     def _is_recipient(address, json_transaction):
@@ -351,9 +349,10 @@ class SymbolClient:
         json_block_and_meta = self._get_json(f'blocks/{height}')
         json_block = json_block_and_meta['block']
         return (
-            NetworkTimestamp(int(json_block['timestamp'])).to_datetime(),
+            self.network.to_datetime(NetworkTimestamp(int(json_block['timestamp']))),
             json_block['feeMultiplier'],
-            Hash256(json_block_and_meta['meta']['hash']))
+            Hash256(json_block_and_meta['meta']['hash'])
+        )
 
     def _get_page(self, rest_path, start_id):
         return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')

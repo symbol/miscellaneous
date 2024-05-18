@@ -18,8 +18,7 @@ class MnemonicRepository:
         mnemonic_descriptor = self.mnemonic_descriptors[mnemonic_name]
         bip32_root_node = Bip32(facade.BIP32_CURVE_NAME).from_mnemonic(mnemonic_descriptor.phrase, mnemonic_descriptor.passphrase)
 
-        coin_id = 1 if 'testnet' == facade.network.name else facade.BIP32_COIN_ID
-        child_node = bip32_root_node.derive_path([44, coin_id, identifier, 0, 0])
+        child_node = bip32_root_node.derive_path(facade.bip32_path(identifier))
         return facade.bip32_node_to_key_pair(child_node)
 
     def load_key_pair(self, facade, account_dict):

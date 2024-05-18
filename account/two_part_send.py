@@ -67,7 +67,7 @@ class TransferPreparer(BasePreparer):
 
         # transfer the fee amount from the multisig account to the (co)signer account
         aggregate_builder.add_embedded_transaction({
-            'type': 'transfer_transaction',
+            'type': 'transfer_transaction_v1',
             'signer_public_key': main_public_key,
             'recipient_address': self.facade.network.public_key_to_address(signer_public_key),
             'mosaics': [self._prepare_transfer_mosaic(transaction_dict['mosaic_id'], 0)]
@@ -83,7 +83,7 @@ class TransferPreparer(BasePreparer):
         self.counter += 1
 
         properties = {
-            'type': 'transfer_transaction',
+            'type': 'transfer_transaction_v1',
             'signer_public_key': signer_public_key,
             'deadline': deadline,
 

@@ -1,6 +1,5 @@
 from symbolchain.CryptoTypes import Hash256, PublicKey
-from symbolchain.nem.Network import Address, Network
-from symbolchain.nem.NetworkTimestamp import NetworkTimestamp
+from symbolchain.nem.Network import Address, Network, NetworkTimestamp
 
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
@@ -31,6 +30,7 @@ class NemClient:
     def __init__(self, host, port=7890, **kwargs):
         self.session = create_http_session(**kwargs)
         (self.node_host, self.node_port) = (host, port)
+        self.network = Network.MAINNET
 
     @staticmethod
     def from_node_info_dict(dict_node_info, **kwargs):
@@ -92,7 +92,7 @@ class NemClient:
         for json_harvest in json_response['data']:
             snapshot = TransactionSnapshot(address, 'harvest')
 
-            snapshot.timestamp = NetworkTimestamp(json_harvest['timeStamp']).to_datetime()
+            snapshot.timestamp = self.network.to_datetime(NetworkTimestamp(json_harvest['timeStamp']))
             snapshot.amount = int(json_harvest['totalFee']) / MICROXEM_PER_XEM
             snapshot.height = int(json_harvest['height'])
             snapshot.collation_id = int(json_harvest['id'])
@@ -114,7 +114,7 @@ class NemClient:
 
             tag = 'supernode' if SUPERNODE_ACCOUNT_PUBLIC_KEY == json_transaction['signer'] else 'transfer'
             snapshot = TransactionSnapshot(address, tag)
-            snapshot.timestamp = NetworkTimestamp(json_transaction['timeStamp']).to_datetime()
+            snapshot.timestamp = self.network.to_datetime(NetworkTimestamp(json_transaction['timeStamp']))
 
             (amount_microxem, fee_microxem) = self._process_xem_changes(snapshot, json_transaction)
 
@@ -127,8 +127,7 @@ class NemClient:
 
         return snapshots
 
-    @staticmethod
-    def _process_xem_changes(snapshot, json_transaction):
+    def _process_xem_changes(self, snapshot, json_transaction):
         amount_microxem = 0
         fee_microxem = 0
         transaction_type = int(json_transaction['type'])
@@ -147,14 +146,13 @@ class NemClient:
         else:
             snapshot.comments = f'unsupported transaction of type {transaction_type}'
 
-        if NemClient._is_signer(snapshot.address, json_transaction):
+        if self._is_signer(snapshot.address, json_transaction):
             fee_microxem = -int(json_transaction['fee'])
 
         return (amount_microxem, fee_microxem)
 
-    @staticmethod
-    def _is_signer(address, json_transaction):
-        return Address(address) == Network.MAINNET.public_key_to_address(PublicKey(json_transaction['signer']))
+    def _is_signer(self, address, json_transaction):
+        return Address(address) == self.network.public_key_to_address(PublicKey(json_transaction['signer']))
 
     def _get_account_page(self, name, address, start_id):
         rest_path = f'account/{name}?address={address}'

@@ -1,7 +1,7 @@
 import sha3
 from symbolchain.CryptoTypes import Hash256
 from symbolchain.sc import Amount, Cosignature, PublicKey, Signature
-from symbolchain.symbol.MerkleHashBuilder import MerkleHashBuilder
+from symbolchain.symbol.Merkle import MerkleHashBuilder
 
 COSIGNATURE_SIZE = 104
 
@@ -20,7 +20,7 @@ class SymbolAggregateBuilder:
     def build(self, fee_multiplier, properties):
         aggregate_transaction = self.facade.transaction_factory.create({
             **properties,
-            'type': 'aggregate_complete_transaction',
+            'type': 'aggregate_complete_transaction_v2',
             'signer_public_key': self.signer_key_pair.public_key,
             'transactions_hash': self._calculate_transactions_hash(),
             'transactions': self.embedded_transactions

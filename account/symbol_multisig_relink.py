@@ -24,7 +24,7 @@ class RelinkPreparer(BasePreparer):
 
         # transfer the fee amount from the multisig account to the (co)signer account
         aggregate_builder.add_embedded_transaction({
-            'type': 'transfer_transaction',
+            'type': 'transfer_transaction_v1',
             'signer_public_key': key_pair_repository.main_public_key,
             'recipient_address': self.facade.network.public_key_to_address(signer_public_key),
             'mosaics': [{'mosaic_id': transaction_dict['fee_mosaic_id'], 'amount': 0}]
@@ -47,7 +47,7 @@ class RelinkPreparer(BasePreparer):
     @staticmethod
     def _to_link_properties(transaction_dict):
         return {
-            'type': 'voting_key_link_transaction',
+            'type': 'voting_key_link_transaction_v1',
             'linked_public_key': PublicKey(transaction_dict['linked_public_key']),
             'start_epoch': transaction_dict['start_epoch'],
             'end_epoch': transaction_dict['end_epoch'],
