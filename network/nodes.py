@@ -176,9 +176,10 @@ class NodeDownloader:
                 retry_count=2,
                 timeout=self.timeout,
                 certificate_directory=self.certificate_directory)
-            if (peer_api_client and peer_api_client.node_host not in self.visited_hosts
-                    and not any(peer_api_client.node_host == api_client.node_host for api_client in self.remaining_api_clients)):
-                self.remaining_api_clients.append(peer_api_client)
+
+            if peer_api_client and peer_api_client.node_host not in self.visited_hosts:
+                if not any(peer_api_client.node_host == api_client.node_host for api_client in self.remaining_api_clients):
+                    self.remaining_api_clients.append(peer_api_client)
 
     def save(self, output_filepath):
         class PublicKeyAwareEncoder(json.JSONEncoder):

@@ -60,7 +60,7 @@ def save_group(mnemonic_repository, group_dict):
 def main():
     parser = argparse.ArgumentParser(description='verifies account derivations from a BIP32 seed and passphrase')
     parser.add_argument('--input', help='input file with information about accounts to verify', required=True)
-    parser.add_argument('--allow-export', help='explicitly allows private keys to be exported as PEM files',  action='store_true')
+    parser.add_argument('--allow-export', help='explicitly allows private keys to be exported as PEM files', action='store_true')
     args = parser.parse_args()
 
     num_total_matches = 0

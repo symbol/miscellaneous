@@ -8,7 +8,7 @@ from client.ResourceLoader import create_blockchain_api_client, load_resources
 NetworkDescriptor = namedtuple('NetworkDescriptor', [
     'friendly_name', 'resources_name', 'blocks_per_day', 'row_view_factory'
 ])
-AccountRowView = namedtuple('AccountRowView', ['address', 'public_key', 'account_type', 'balance',  'importance', 'percent_vested'])
+AccountRowView = namedtuple('AccountRowView', ['address', 'public_key', 'account_type', 'balance', 'importance', 'percent_vested'])
 NetworkPrinterOptions = namedtuple('NetworkPrinterOptions', ['use_friendly_names', 'show_zero_balances'])
 
 

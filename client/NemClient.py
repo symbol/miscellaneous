@@ -48,10 +48,10 @@ class NemClient:
     def get_block_hash(self, height):
         # due to limitation in NEM REST API, we need to query next block to get current block hash
         # as a result, newest block hash will be unknown
-        json_response = self._post_json('block/at/public', {'height': height+1})
+        json_response = self._post_json('block/at/public', {'height': height + 1})
 
         if 'error' in json_response:
-            raise Exception(str(json_response))
+            raise RuntimeError(str(json_response))
 
         return Hash256(json_response['prevBlockHash']['data']) if 'prevBlockHash' in json_response else None
 

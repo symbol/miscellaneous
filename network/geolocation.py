@@ -1,14 +1,17 @@
 import argparse
 import json
-from socket import gaierror, error, gethostbyname
-import threading
 import queue
+import threading
 import time
+from socket import error, gaierror, gethostbyname
+
 from zenlog import log
+
 from client.GeolocationClient import GeolocationClient
 
 REQUEST_RATE = 15  # 15 requests / 1 minute
 CHUNK_SIZE = 100  # up to 100 IPs per request
+
 
 class NodeGeolocation:
     """
@@ -20,7 +23,8 @@ class NodeGeolocation:
         self.output_file_directory = output_file_directory
         self.hosts = []
 
-    def _create_host_ip_info(self, host):
+    @staticmethod
+    def _create_host_ip_info(host):
         """
         Returns a dictionary with the hostname and IP address of a node.
         If an error occurs during the lookup, returns None.
@@ -42,7 +46,7 @@ class NodeGeolocation:
         to be processed by the geolocation client.
         """
 
-        with open(self.nodes_file_directory, 'r') as nodes_file:
+        with open(self.nodes_file_directory, 'r', encoding='utf8') as nodes_file:
             nodes = json.load(nodes_file)
 
         for node in nodes:
@@ -54,15 +58,15 @@ class NodeGeolocation:
 
         ips = [host['ip'] for host in self.hosts]
 
-        requestGeolocationQueue = queue.Queue()
+        request_geolocation_queue = queue.Queue()
 
-        groups = [ips[i:i+CHUNK_SIZE] for i in range(0, len(ips), CHUNK_SIZE)]
+        groups = [ips[i:i + CHUNK_SIZE] for i in range(0, len(ips), CHUNK_SIZE)]
 
-        for i in range(len(groups)):
-            requestGeolocationQueue.put(groups[i])
+        for group in groups:
+            request_geolocation_queue.put(group)
 
-        t = threading.Thread(target=self._get_nodes_geolocation_thread, args=(requestGeolocationQueue,))
-        t.start()
+        thread = threading.Thread(target=self._get_nodes_geolocation_thread, args=(request_geolocation_queue,))
+        thread.start()
 
     def _process_ips(self, ips):
         """
@@ -84,26 +88,26 @@ class NodeGeolocation:
                 if host['ip'] == geolocation['query']:
                     host['geolocation'] = geolocation
 
-    def _get_nodes_geolocation_thread(self, requestGeolocationQueue):
+    def _get_nodes_geolocation_thread(self, request_geolocation_queue):
         """
         Method that runs in a separate thread to fetch the geolocation of the IP addresses
-        in the `requestGeolocationQueue`.
+        in the `request_geolocation_queue`.
         """
 
-        log.info(f'starting crawler geolocation threads')
+        log.info('starting crawler geolocation threads')
 
-        totalQueue = requestGeolocationQueue.qsize()
+        total_queue = request_geolocation_queue.qsize()
 
         while True:
-            if not requestGeolocationQueue.empty():
-                ips = requestGeolocationQueue.get()
+            if not request_geolocation_queue.empty():
+                ips = request_geolocation_queue.get()
 
                 self._process_ips(ips)
 
-                if totalQueue > REQUEST_RATE:
+                if total_queue > REQUEST_RATE:
                     time.sleep(60 / REQUEST_RATE)
 
-                log.info(f'queue progress: {totalQueue - requestGeolocationQueue.qsize()} / {totalQueue}')
+                log.info(f'queue progress: {total_queue - request_geolocation_queue.qsize()} / {total_queue}')
             else:
                 log.info('completed')
                 self.save(self.output_file_directory)
@@ -117,14 +121,16 @@ class NodeGeolocation:
                 outfile,
                 indent=2)
 
+
 def main():
     parser = argparse.ArgumentParser(description='downloads node information from a network')
     parser.add_argument('--input', help='nodes json file', required=True)
     parser.add_argument('--output', help='output file', required=True)
     args = parser.parse_args()
 
-    nodeGeolocation = NodeGeolocation(args.input, args.output)
-    nodeGeolocation.get_nodes_geolocation()
+    node_geolocation = NodeGeolocation(args.input, args.output)
+    node_geolocation.get_nodes_geolocation()
+
 
 if '__main__' == __name__:
     main()
