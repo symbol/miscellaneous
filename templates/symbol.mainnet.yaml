@@ -9,6 +9,4 @@ accounts:
   - { address: NAL4XHZU6MANNNFQI4Z2WNMU3KRI2YW2MRRMHLI, name: Core3, roles: [core] }
 
 nodes:
-  - host: xym118.allnodes.me
   - host: wolf.importance.jp
-  - host: xym99.allnodes.me
