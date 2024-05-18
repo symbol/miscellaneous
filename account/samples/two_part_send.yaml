@@ -1,4 +1,4 @@
-output_directory: '.'
+output_directory: '_generated'
 
 mnemonics:
   - name: alpaca
