@@ -3,6 +3,7 @@
 *.pyc
 __pycache__/
 .idea
+.python-version
 .vscode/
 .DS_Store
 _generated/
