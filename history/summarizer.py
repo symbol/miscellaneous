@@ -71,7 +71,7 @@ class Loader():
 			csv_writer = csv.DictWriter(outfile, field_names)
 			csv_writer.writerow(dict(zip(field_names, field_names)))
 
-			for row in sorted(self.rows, key=lambda row: row['date']):
+			for row in sorted(self.rows, key=lambda row: (row['date'] is not None, row['date'])):
 				csv_writer.writerow(row)
 
 
