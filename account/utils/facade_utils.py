@@ -17,7 +17,7 @@ def create_blockchain_facade(blockchain_descriptor):
 
 
 def save_transaction(facade, transaction, signature, output_directory, name):
-	facade.transaction_factory.attach_signature(transaction, signature)
+	json_payload = facade.transaction_factory.attach_signature(transaction, signature)
 
 	log.info(f'*** {name} ***')
 	log.debug(transaction)
@@ -28,8 +28,8 @@ def save_transaction(facade, transaction, signature, output_directory, name):
 	output_filepath = Path(output_directory) / f'{name}.dat'
 	log.info(f'saving "{name}" to "{output_filepath}"')
 
-	with open(output_filepath, 'wb') as outfile:
-		outfile.write(transaction.serialize())
+	with open(output_filepath, 'wt', encoding='utf8') as outfile:
+		outfile.write(json_payload)
 
 
 def main_loop(args, preparer_class, property_name):
