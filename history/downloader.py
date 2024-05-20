@@ -30,6 +30,8 @@ class ChainActivityDownloader:
 		if not num_rows_written:
 			Path(output_filepath).unlink()
 
+		log.debug(f'[{output_filepath}] download complete!')
+
 	def _download_batch(self, mode, start_date, end_date, output_filepath, csv_writer):
 		# pylint: disable=too-many-arguments
 
