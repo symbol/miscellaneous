@@ -3,7 +3,6 @@ import ssl
 from binascii import unhexlify
 from collections import namedtuple
 from pathlib import Path
-import websocket
 
 from symbolchain.BufferReader import BufferReader
 from symbolchain.BufferWriter import BufferWriter
