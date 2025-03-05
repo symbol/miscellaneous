@@ -200,19 +200,10 @@ class SymbolClient:
 
 		return account_infos
 
-	def is_https_valid(self):
+	def is_ssl(self):
 		try:
 			url = f'https://{self.node_host}:3001/node/info'
 			self.session.get(url, timeout=5)
-			return True
-		except:
-			return False
-
-	def is_wss_valid(self):
-		try:
-			url = f'wss://{self.node_host}:3001/ws'
-			ws = websocket.create_connection(url, timeout=5)
-			ws.close()
 			return True
 		except:
 			return False
