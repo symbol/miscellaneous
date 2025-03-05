@@ -4,6 +4,7 @@ from binascii import unhexlify
 from collections import namedtuple
 from pathlib import Path
 
+from requests.exceptions import RequestException
 from symbolchain.BufferReader import BufferReader
 from symbolchain.BufferWriter import BufferWriter
 from symbolchain.CryptoTypes import Hash256, PublicKey
@@ -204,7 +205,7 @@ class SymbolClient:
 			url = f'https://{self.node_host}:3001/node/info'
 			self.session.get(url, timeout=5)
 			return True
-		except:
+		except (RequestException, TimeoutError):
 			return False
 
 	def get_rest_version(self):
@@ -213,7 +214,7 @@ class SymbolClient:
 
 	def is_node_health(self):
 		json_response = self._get_json('node/health')
-		return all([json_response['status']['apiNode'] == 'up',  json_response['status']['db'] == 'up'])
+		return all([json_response['status']['apiNode'] == 'up', json_response['status']['db'] == 'up'])
 
 	@staticmethod
 	def _parse_account_info(json_account, mosaic_id=None):
