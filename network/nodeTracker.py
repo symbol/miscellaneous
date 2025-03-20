@@ -141,10 +141,17 @@ class NodeTracker:
 		# Load existing time series data from output file
 		time_series_data = self._load_time_series_data(output)
 
-		time_series_data.append({
-			'date': str(datetime.utcnow()),
+		new_snapshot = {
+			'date': datetime.strptime(snapshot_date, '%Y%m%d').strftime('%Y-%m-%d'),
 			'values': average_counts
-		})
+		}
+
+		# Check if snapshot already exists
+		existing_dates = {entry['date'] for entry in time_series_data}
+		if new_snapshot['date'] in existing_dates:
+			raise ValueError(f'Time series data for {snapshot_date} already exists')
+
+		time_series_data.append(new_snapshot)
 
 		# Save time series data
 		self._save_time_series_data(time_series_data, output)
