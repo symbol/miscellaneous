@@ -202,3 +202,23 @@ Example: The script can take an input file named `symbolnodes.json`, which conta
 ```sh
 python3 -m network.geolocation --file ./symbolnodes.json --output geolocation.json
 ```
+
+### nodeTracker
+
+_capture and generates number of nodes in a network_
+
+snapshot number of nodes in a network and store it as time series data into `./network_node_history` folder.
+
+Example: The script can take an input file named `symbol_nodes.json`, calculate node by roles and store the data as time series data into `./network_node_history` folder.
+
+```sh
+python3 -m network.nodeTracker --action capture --input ./symbol_nodes.json
+```
+
+Generate daily node count snapshot result and append it to `node_counts_symbol.json`.
+
+Example: The script filter snapshot file by date from `./network_node_history` folder and generate daily node count snapshot result.
+
+```sh
+python3 -m network.nodeTracker --action generate --snapshot-date 20250320 --output node_counts_symbol.json
+```
