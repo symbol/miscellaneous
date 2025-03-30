@@ -11,7 +11,8 @@ class NodeTracker:
 	Class for tracking the number of nodes in a network.
 	"""
 
-	def _load_time_series_data(self, output):  # pylint: disable=no-self-use
+	@staticmethod
+	def _load_time_series_data(output):
 		"""
 		Loads the time series data from the output file.
 		"""
@@ -35,8 +36,7 @@ class NodeTracker:
 		time_series = self._load_time_series_data(output_file)
 
 		# Check if snapshot already exists
-		existing_dates = {entry['date'] for entry in time_series}
-		if data_point['date'] in existing_dates:
+		if time_series and time_series[-1]['date'] == data_point['date']:
 			raise ValueError(f'Time series data for {data_point["date"]} already exists')
 
 		time_series.append(data_point)
@@ -61,6 +61,8 @@ class NodeTracker:
 			role = str(node['roles'])
 			if role in node_roles:
 				roles[role] += 1
+			else:
+				log.warning(f'Unknown node role: {role}')
 
 		roles['total'] = sum(roles.values())
 
