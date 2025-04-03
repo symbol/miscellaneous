@@ -46,7 +46,8 @@ class NodeTracker:
 
 		log.info(f'Saved time series data to: {output_file}')
 
-	def _count_roles(self, nodes):  # pylint: disable=no-self-use
+	@staticmethod
+	def _count_roles(nodes):
 		"""
 		Counts the number of nodes for each role.
 		"""
