@@ -27,7 +27,7 @@ class NodeTracker:
 
 		return time_series_data
 
-	def _add_data_point(self, data_point, output_file):  # pylint: disable=no-self-use
+	def _add_data_point(self, data_point, output_file):
 		"""
 		Adds a new data point to the time series data.
 		"""
