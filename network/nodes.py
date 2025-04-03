@@ -152,10 +152,13 @@ class NodeDownloader:
 
 		if not self.is_nem:
 			json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
-			json_node['apiNodeInfo'] = {}
-			json_node['apiNodeInfo']['restVersion'] = api_client.get_rest_version()
-			json_node['apiNodeInfo']['isHealth'] = api_client.is_node_health()
-			json_node['apiNodeInfo']['isSSL'] = api_client.is_ssl()
+
+			# only add apiNodeInfo if only api node
+			if json_node['roles'] & 2:
+				json_node['apiNodeInfo'] = {}
+				json_node['apiNodeInfo']['restVersion'] = api_client.get_rest_version()
+				json_node['apiNodeInfo']['isHealth'] = api_client.is_node_health()
+				json_node['apiNodeInfo']['isSSL'] = api_client.is_ssl()
 
 	# this function must be called in context of self.lock
 	def _pop_next_api_client(self):
