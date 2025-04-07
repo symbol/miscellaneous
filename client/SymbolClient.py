@@ -14,7 +14,7 @@ from zenlog import log
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
 
-FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height'])
+FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height', 'hash'])
 VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'public_key'])
 
 
@@ -71,8 +71,12 @@ class SymbolPeerClient:
 		return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
 
 	def get_finalization_info(self):
-		# epoch and point are zeroed for now
-		return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
+		return FinalizationInfo(
+			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['epoch'],
+			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['point'],
+			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['height'],
+			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['hash']
+		)
 
 	def get_node_info(self):
 		return self._send_socket_request(0x111, self._parse_node_info_response)
@@ -144,6 +148,17 @@ class SymbolPeerClient:
 
 		return node_info
 
+	@staticmethod
+	def _parse_node_finalization_statistics_response(reader):
+		finalization_statistics = {}
+
+		finalization_statistics['epoch'] = reader.read_int(4)
+		finalization_statistics['point'] = reader.read_int(4)
+		finalization_statistics['height'] = reader.read_int(8)
+		finalization_statistics['hash'] = str(Hash256(reader.read_bytes(32)))
+
+		return finalization_statistics
+
 
 class SymbolClient:
 	def __init__(self, host, port=3000, **kwargs):
@@ -168,7 +183,8 @@ class SymbolClient:
 		return FinalizationInfo(
 			int(json_finalization_info['finalizationEpoch']),
 			int(json_finalization_info['finalizationPoint']),
-			int(json_finalization_info['height']))
+			int(json_finalization_info['height']),
+			str(json_finalization_info['hash']))
 
 	def get_harvester_signer_public_key(self, height):
 		json_response = self._get_json(f'blocks/{height}')
