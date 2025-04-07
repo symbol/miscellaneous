@@ -152,6 +152,9 @@ class NodeDownloader:
 
 		if not self.is_nem:
 			json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
+			json_node['extraData']['finalizedEpoch'] = api_client.get_finalization_info().epoch
+			json_node['extraData']['finalizedPoint'] = api_client.get_finalization_info().point
+			json_node['extraData']['finalizedHash'] = api_client.get_finalization_info().hash
 
 			if hasattr(api_client, 'get_rest_version'):
 				json_node['apiNodeInfo'] = {}
