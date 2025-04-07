@@ -153,7 +153,7 @@ class NodeDownloader:
 		if not self.is_nem:
 			json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
 
-			# only add apiNodeInfo if only api node
+			# add apiNodeInfo if API node roles are included
 			if json_node['roles'] & 2:
 				json_node['apiNodeInfo'] = {}
 				json_node['apiNodeInfo']['restVersion'] = api_client.get_rest_version()
