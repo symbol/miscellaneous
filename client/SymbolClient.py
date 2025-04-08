@@ -127,12 +127,9 @@ class SymbolPeerClient():
 		return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
 
 	def get_finalization_info(self):
-		return FinalizationInfo(
-			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['epoch'],
-			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['point'],
-			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['height'],
-			self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)['hash']
-		)
+		finalization_info = self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)
+
+		return FinalizationInfo(**finalization_info)
 
 	def get_node_info(self):
 		return self._send_socket_request(0x111, self._parse_node_info_response)
