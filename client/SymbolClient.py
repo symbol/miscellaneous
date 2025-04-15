@@ -54,8 +54,36 @@ class AccountInfo:
 		self.voting_public_keys = []
 
 
-class SymbolPeerClient:
+class SymbolLightRESTClient:
+	"""
+	Class for Symbol light rest client.
+	"""
+
+	def __init__(self, host, **kwargs):
+		self.node_host = host
+		self.session = create_http_session(**kwargs)
+
+	def is_ssl(self):
+		try:
+			url = f'https://{self.node_host}:3001/node/info'
+			self.session.get(url, timeout=5)
+			return True
+		except (RequestException, TimeoutError):
+			return False
+
+	def get_rest_version(self):
+		try:
+			json_http_headers = {'Content-type': 'application/json'}
+			json_response = self.session.get(f'http://{self.node_host}:3000/node/server', headers=json_http_headers).json()
+
+			return json_response['serverInfo']['restVersion']
+		except (RequestException, TimeoutError):
+			return None
+
+
+class SymbolPeerClient(SymbolLightRESTClient):
 	def __init__(self, host, port=7890, **kwargs):
+		super().__init__(host, **kwargs)
 		(self.node_host, self.node_port) = (host, port)
 		self.certificate_directory = Path(kwargs.get('certificate_directory'))
 		self.timeout = kwargs.get('timeout', 10)
@@ -144,10 +172,15 @@ class SymbolPeerClient:
 
 		return node_info
 
+	@staticmethod
+	def is_node_health():
+		# Light node does not have this method
+		return None
 
-class SymbolClient:
+
+class SymbolClient(SymbolLightRESTClient):
 	def __init__(self, host, port=3000, **kwargs):
-		self.session = create_http_session(**kwargs)
+		super().__init__(host, **kwargs)
 		(self.node_host, self.node_port) = (host, port)
 		self.network = Network.MAINNET
 
@@ -199,18 +232,6 @@ class SymbolClient:
 			account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
 
 		return account_infos
-
-	def is_ssl(self):
-		try:
-			url = f'https://{self.node_host}:3001/node/info'
-			self.session.get(url, timeout=5)
-			return True
-		except (RequestException, TimeoutError):
-			return False
-
-	def get_rest_version(self):
-		json_response = self._get_json('node/server')
-		return json_response['serverInfo']['restVersion']
 
 	def is_node_health(self):
 		json_response = self._get_json('node/health')
