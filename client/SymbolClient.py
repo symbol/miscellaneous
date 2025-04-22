@@ -54,14 +54,35 @@ class AccountInfo:
 		self.voting_public_keys = []
 
 
-class SymbolLightRESTClient:
+class SymbolLightClient:
 	"""
 	Class for Symbol light rest client.
 	"""
 
-	def __init__(self, host, **kwargs):
+	def __init__(self, host, port=3000, **kwargs):
 		self.node_host = host
+		self.node_port = port
 		self.session = create_http_session(**kwargs)
+
+	def get_chain_height(self):
+		json_response = self._get_json('chain/info')
+		return int(json_response['height'])
+
+	def get_finalization_info(self):
+		json_response = self._get_json('chain/info')
+		json_finalization_info = json_response['latestFinalizedBlock']
+		return FinalizationInfo(
+			int(json_finalization_info['finalizationEpoch']),
+			int(json_finalization_info['finalizationPoint']),
+			int(json_finalization_info['height']))
+
+	def get_node_info(self):
+		json_response = self._get_json('node/info')
+		return json_response
+
+	def get_peers(self):
+		json_response = self._get_json('node/peers')
+		return json_response
 
 	def is_ssl(self):
 		try:
@@ -73,17 +94,18 @@ class SymbolLightRESTClient:
 
 	def get_rest_version(self):
 		try:
-			json_http_headers = {'Content-type': 'application/json'}
-			json_response = self.session.get(f'http://{self.node_host}:3000/node/server', headers=json_http_headers).json()
-
+			json_response = self._get_json('node/server')
 			return json_response['serverInfo']['restVersion']
 		except (RequestException, TimeoutError):
 			return None
 
+	def _get_json(self, rest_path):
+		json_http_headers = {'Content-type': 'application/json'}
+		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
 
-class SymbolPeerClient(SymbolLightRESTClient):
+
+class SymbolPeerClient():
 	def __init__(self, host, port=7890, **kwargs):
-		super().__init__(host, **kwargs)
 		(self.node_host, self.node_port) = (host, port)
 		self.certificate_directory = Path(kwargs.get('certificate_directory'))
 		self.timeout = kwargs.get('timeout', 10)
@@ -173,14 +195,24 @@ class SymbolPeerClient(SymbolLightRESTClient):
 		return node_info
 
 	@staticmethod
+	def get_rest_version():
+		# Peer node does not have this method
+		return None
+
+	@staticmethod
+	def is_ssl():
+		# Peer node does not have this method
+		return None
+
+	@staticmethod
 	def is_node_health():
-		# Light node does not have this method
+		# Peer node does not have this method
 		return None
 
 
-class SymbolClient(SymbolLightRESTClient):
+class SymbolClient(SymbolLightClient):
 	def __init__(self, host, port=3000, **kwargs):
-		super().__init__(host, **kwargs)
+		super().__init__(host, port, **kwargs)
 		(self.node_host, self.node_port) = (host, port)
 		self.network = Network.MAINNET
 
@@ -191,29 +223,9 @@ class SymbolClient(SymbolLightRESTClient):
 
 		return SymbolClient(dict_node_info['host'], **kwargs)
 
-	def get_chain_height(self):
-		json_response = self._get_json('chain/info')
-		return int(json_response['height'])
-
-	def get_finalization_info(self):
-		json_response = self._get_json('chain/info')
-		json_finalization_info = json_response['latestFinalizedBlock']
-		return FinalizationInfo(
-			int(json_finalization_info['finalizationEpoch']),
-			int(json_finalization_info['finalizationPoint']),
-			int(json_finalization_info['height']))
-
 	def get_harvester_signer_public_key(self, height):
 		json_response = self._get_json(f'blocks/{height}')
 		return PublicKey(json_response['block']['signerPublicKey'])
-
-	def get_node_info(self):
-		json_response = self._get_json('node/info')
-		return json_response
-
-	def get_peers(self):
-		json_response = self._get_json('node/peers')
-		return json_response
 
 	def get_account_info(self, address, mosaic_id=None):
 		json_response = self._get_json(f'accounts/{address}')
@@ -394,7 +406,3 @@ class SymbolClient(SymbolLightRESTClient):
 
 	def _get_page(self, rest_path, start_id):
 		return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')
-
-	def _get_json(self, rest_path):
-		json_http_headers = {'Content-type': 'application/json'}
-		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
