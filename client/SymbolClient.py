@@ -219,6 +219,12 @@ class SymbolClient(SymbolLightClient):
 	@staticmethod
 	def from_node_info_dict(dict_node_info, **kwargs):
 		if not dict_node_info['roles'] & 2:
+			light_client = SymbolLightClient(dict_node_info['host'], **kwargs)
+			rest_version = light_client.get_rest_version()
+
+			if rest_version:
+				return light_client
+
 			return SymbolPeerClient(dict_node_info['host'], dict_node_info['port'], **kwargs)
 
 		return SymbolClient(dict_node_info['host'], **kwargs)
