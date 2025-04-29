@@ -99,6 +99,10 @@ class SymbolLightClient:
 		except (RequestException, TimeoutError):
 			return None
 
+	def is_node_health(self):  # pylint: disable=no-self-use
+		# Light node does not have this method
+		return None
+
 	def _get_json(self, rest_path):
 		json_http_headers = {'Content-type': 'application/json'}
 		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()

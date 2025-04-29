@@ -179,14 +179,16 @@ class NodeDownloader:
 	def _update(self, public_key, json_node, json_peers):
 		self.public_key_to_node_info_map[public_key] = json_node
 		for json_peer in json_peers:
-			peer_api_client = self.api_client_class.from_node_info_dict(
-				json_peer,
-				retry_count=2,
-				timeout=self.timeout,
-				certificate_directory=self.certificate_directory)
+			host = json_peer.get('host')
 
-			if peer_api_client and peer_api_client.node_host not in self.visited_hosts:
-				if not any(peer_api_client.node_host == api_client.node_host for api_client in self.remaining_api_clients):
+			if host not in self.visited_hosts:
+				if not any(host == api_client.node_host for api_client in self.remaining_api_clients):
+					peer_api_client = self.api_client_class.from_node_info_dict(
+						json_peer,
+						retry_count=2,
+						timeout=self.timeout,
+						certificate_directory=self.certificate_directory)
+
 					self.remaining_api_clients.append(peer_api_client)
 
 	def save(self, output_filepath):
