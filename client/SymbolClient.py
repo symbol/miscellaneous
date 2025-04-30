@@ -63,6 +63,7 @@ class SymbolLightClient:
 		self.node_host = host
 		self.node_port = port
 		self.session = create_http_session(**kwargs)
+		self.timeout = kwargs.get('timeout', 5)
 
 	def get_chain_height(self):
 		json_response = self._get_json('chain/info')
@@ -87,7 +88,7 @@ class SymbolLightClient:
 	def is_ssl(self):
 		try:
 			url = f'https://{self.node_host}:3001/node/info'
-			self.session.get(url, timeout=5)
+			self.session.get(url, timeout=self.timeout)
 			return True
 		except (RequestException, TimeoutError):
 			return False
