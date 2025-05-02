@@ -199,21 +199,6 @@ class SymbolPeerClient():
 
 		return node_info
 
-	@staticmethod
-	def get_rest_version():
-		# Peer node does not have this method
-		return None
-
-	@staticmethod
-	def is_ssl():
-		# Peer node does not have this method
-		return None
-
-	@staticmethod
-	def is_node_health():
-		# Peer node does not have this method
-		return None
-
 
 class SymbolClient(SymbolLightClient):
 	def __init__(self, host, port=3000, **kwargs):
