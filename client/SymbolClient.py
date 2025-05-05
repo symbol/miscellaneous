@@ -14,7 +14,7 @@ from zenlog import log
 from .pod import TransactionSnapshot
 from .TimeoutHTTPAdapter import create_http_session
 
-FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height'])
+FinalizationInfo = namedtuple('FinalizationInfo', ['epoch', 'point', 'height', 'hash'])
 VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'public_key'])
 
 
@@ -54,7 +54,63 @@ class AccountInfo:
 		self.voting_public_keys = []
 
 
-class SymbolPeerClient:
+class SymbolLightClient:
+	"""
+	Class for Symbol light rest client.
+	"""
+
+	def __init__(self, host, port=3000, **kwargs):
+		self.node_host = host
+		self.node_port = port
+		self.session = create_http_session(**kwargs)
+		self.timeout = kwargs.get('timeout', 5)
+
+	def get_chain_height(self):
+		json_response = self._get_json('chain/info')
+		return int(json_response['height'])
+
+	def get_finalization_info(self):
+		json_response = self._get_json('chain/info')
+		json_finalization_info = json_response['latestFinalizedBlock']
+		return FinalizationInfo(
+			int(json_finalization_info['finalizationEpoch']),
+			int(json_finalization_info['finalizationPoint']),
+			int(json_finalization_info['height']),
+			str(json_finalization_info['hash']))
+
+	def get_node_info(self):
+		json_response = self._get_json('node/info')
+		return json_response
+
+	def get_peers(self):
+		json_response = self._get_json('node/peers')
+		return json_response
+
+	def is_ssl(self):
+		try:
+			url = f'https://{self.node_host}:3001/node/info'
+			self.session.get(url, timeout=self.timeout)
+			return True
+		except (RequestException, TimeoutError):
+			return False
+
+	def get_rest_version(self):
+		try:
+			json_response = self._get_json('node/server')
+			return json_response['serverInfo']['restVersion']
+		except (RequestException, TimeoutError):
+			return None
+
+	def is_node_health(self):  # pylint: disable=no-self-use
+		# Light node does not have this method
+		return None
+
+	def _get_json(self, rest_path):
+		json_http_headers = {'Content-type': 'application/json'}
+		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
+
+
+class SymbolPeerClient():
 	def __init__(self, host, port=7890, **kwargs):
 		(self.node_host, self.node_port) = (host, port)
 		self.certificate_directory = Path(kwargs.get('certificate_directory'))
@@ -71,8 +127,9 @@ class SymbolPeerClient:
 		return self._send_socket_request(5, self._parse_chain_statistics_response)['height']
 
 	def get_finalization_info(self):
-		# epoch and point are zeroed for now
-		return FinalizationInfo(0, 0, self._send_socket_request(5, self._parse_chain_statistics_response)['finalizedHeight'])
+		finalization_info = self._send_socket_request(0x132, self._parse_node_finalization_statistics_response)
+
+		return FinalizationInfo(**finalization_info)
 
 	def get_node_info(self):
 		return self._send_socket_request(0x111, self._parse_node_info_response)
@@ -144,43 +201,40 @@ class SymbolPeerClient:
 
 		return node_info
 
+	@staticmethod
+	def _parse_node_finalization_statistics_response(reader):
+		finalization_statistics = {}
 
-class SymbolClient:
+		finalization_statistics['epoch'] = reader.read_int(4)
+		finalization_statistics['point'] = reader.read_int(4)
+		finalization_statistics['height'] = reader.read_int(8)
+		finalization_statistics['hash'] = str(Hash256(reader.read_bytes(32)))
+
+		return finalization_statistics
+
+
+class SymbolClient(SymbolLightClient):
 	def __init__(self, host, port=3000, **kwargs):
-		self.session = create_http_session(**kwargs)
+		super().__init__(host, port, **kwargs)
 		(self.node_host, self.node_port) = (host, port)
 		self.network = Network.MAINNET
 
 	@staticmethod
 	def from_node_info_dict(dict_node_info, **kwargs):
 		if not dict_node_info['roles'] & 2:
+			light_client = SymbolLightClient(dict_node_info['host'], **kwargs)
+			rest_version = light_client.get_rest_version()
+
+			if rest_version:
+				return light_client
+
 			return SymbolPeerClient(dict_node_info['host'], dict_node_info['port'], **kwargs)
 
 		return SymbolClient(dict_node_info['host'], **kwargs)
 
-	def get_chain_height(self):
-		json_response = self._get_json('chain/info')
-		return int(json_response['height'])
-
-	def get_finalization_info(self):
-		json_response = self._get_json('chain/info')
-		json_finalization_info = json_response['latestFinalizedBlock']
-		return FinalizationInfo(
-			int(json_finalization_info['finalizationEpoch']),
-			int(json_finalization_info['finalizationPoint']),
-			int(json_finalization_info['height']))
-
 	def get_harvester_signer_public_key(self, height):
 		json_response = self._get_json(f'blocks/{height}')
 		return PublicKey(json_response['block']['signerPublicKey'])
-
-	def get_node_info(self):
-		json_response = self._get_json('node/info')
-		return json_response
-
-	def get_peers(self):
-		json_response = self._get_json('node/peers')
-		return json_response
 
 	def get_account_info(self, address, mosaic_id=None):
 		json_response = self._get_json(f'accounts/{address}')
@@ -199,18 +253,6 @@ class SymbolClient:
 			account_infos.append(self._parse_account_info(json_account_container['account'], mosaic_id))
 
 		return account_infos
-
-	def is_ssl(self):
-		try:
-			url = f'https://{self.node_host}:3001/node/info'
-			self.session.get(url, timeout=5)
-			return True
-		except (RequestException, TimeoutError):
-			return False
-
-	def get_rest_version(self):
-		json_response = self._get_json('node/server')
-		return json_response['serverInfo']['restVersion']
 
 	def is_node_health(self):
 		json_response = self._get_json('node/health')
@@ -373,7 +415,3 @@ class SymbolClient:
 
 	def _get_page(self, rest_path, start_id):
 		return self._get_json(rest_path if not start_id else f'{rest_path}&offset={start_id}')
-
-	def _get_json(self, rest_path):
-		json_http_headers = {'Content-type': 'application/json'}
-		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()

@@ -151,11 +151,17 @@ class NodeDownloader:
 		json_node['extraData']['height'] = api_client.get_chain_height()
 
 		if not self.is_nem:
-			json_node['extraData']['finalizedHeight'] = api_client.get_finalization_info().height
-			json_node['apiNodeInfo'] = {}
-			json_node['apiNodeInfo']['restVersion'] = api_client.get_rest_version()
-			json_node['apiNodeInfo']['isHealth'] = api_client.is_node_health()
-			json_node['apiNodeInfo']['isSSL'] = api_client.is_ssl()
+			finalization_info = api_client.get_finalization_info()
+			json_node['extraData']['finalizedHeight'] = finalization_info.height
+			json_node['extraData']['finalizedEpoch'] = finalization_info.epoch
+			json_node['extraData']['finalizedPoint'] = finalization_info.point
+			json_node['extraData']['finalizedHash'] = finalization_info.hash
+
+			if hasattr(api_client, 'get_rest_version'):
+				json_node['apiNodeInfo'] = {}
+				json_node['apiNodeInfo']['restVersion'] = api_client.get_rest_version()
+				json_node['apiNodeInfo']['isSSL'] = api_client.is_ssl()
+				json_node['apiNodeInfo']['isHealth'] = api_client.is_node_health()
 
 	# this function must be called in context of self.lock
 	def _pop_next_api_client(self):
@@ -178,14 +184,16 @@ class NodeDownloader:
 	def _update(self, public_key, json_node, json_peers):
 		self.public_key_to_node_info_map[public_key] = json_node
 		for json_peer in json_peers:
-			peer_api_client = self.api_client_class.from_node_info_dict(
-				json_peer,
-				retry_count=2,
-				timeout=self.timeout,
-				certificate_directory=self.certificate_directory)
+			host = json_peer.get('host')
 
-			if peer_api_client and peer_api_client.node_host not in self.visited_hosts:
-				if not any(peer_api_client.node_host == api_client.node_host for api_client in self.remaining_api_clients):
+			if host not in self.visited_hosts:
+				if not any(host == api_client.node_host for api_client in self.remaining_api_clients):
+					peer_api_client = self.api_client_class.from_node_info_dict(
+						json_peer,
+						retry_count=2,
+						timeout=self.timeout,
+						certificate_directory=self.certificate_directory)
+
 					self.remaining_api_clients.append(peer_api_client)
 
 	def save(self, output_filepath):
