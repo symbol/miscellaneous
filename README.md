@@ -202,3 +202,15 @@ Example: The script can take an input file named `symbolnodes.json`, which conta
 ```sh
 python3 -m network.geolocation --file ./symbolnodes.json --output geolocation.json
 ```
+
+### nodeTracker
+
+_capture number of nodes in a network_
+
+snapshot number of nodes in a network and append it to a time series file.
+
+Example: The script can take an input file named `symbol_nodes.json`, calculate node by roles and append the result to output file named `node_counts_symbol.json`.
+
+```sh
+python3 -m network.nodeTracker --input ./symbol_nodes.json --output node_counts_symbol.json
+```
