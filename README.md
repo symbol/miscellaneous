@@ -196,11 +196,11 @@ _downloads geolocation info from node list_
 
 Retrieve host information from nodes file (generated from network.nodes), convert host names to their corresponding IP addresses, and then make batch requests to IP-API.com to obtain geolocation information for each IP address.
 
-Example: The script can take an input file named `symbolnodes.json`, which contains the host information for a set of nodes, and then use this data to make requests to IP-API.com. The resulting geolocation information save to `geolocation.json`.
+Example: The script can take an input file named `symbol_nodes.json`, which contains the host information for a set of nodes, and then use this data to make requests to IP-API.com. The resulting geolocation information save to `geo_location.json`.
 
 
 ```sh
-python3 -m network.geolocation --file ./symbolnodes.json --output geolocation.json
+python3 -m network.geolocation --input ./symbol_nodes.json --output geo_location.json
 ```
 
 ### nodeTracker
