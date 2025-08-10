@@ -97,6 +97,11 @@ class SymbolLightClient:
 	def get_rest_version(self):
 		try:
 			json_response = self._get_json('node/server')
+
+			if 'code' in json_response:
+				log.warning(f'unable to retrieve {self.node_host}:{self.node_port}/node/server')
+				return None
+
 			return json_response['serverInfo']['restVersion']
 		except (RequestException, TimeoutError):
 			return None
