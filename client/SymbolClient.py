@@ -91,14 +91,14 @@ class SymbolLightClient:
 			url = f'https://{self.node_host}:3001/node/info'
 			self.session.get(url, timeout=self.timeout)
 			return True
-		except Exception:
+		except (RequestException, TimeoutError):
 			return False
 
 	def get_rest_version(self):
 		try:
 			json_response = self._get_json('node/server')
 			return json_response['serverInfo']['restVersion']
-		except Exception:
+		except (RequestException, TimeoutError):
 			return None
 
 	def is_node_health(self):  # pylint: disable=no-self-use
