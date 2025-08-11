@@ -55,7 +55,7 @@ class NodeTracker:
 
 		# Process Nem nodes or empty nodes
 		if not nodes or 'roles' not in nodes[0]:
-			return {'total': len(nodes)}
+			return {'total': len(nodes) if nodes else 0}
 
 		# Process Symbol nodes
 		node_roles = ['1', '2', '3', '4', '5', '6', '7']

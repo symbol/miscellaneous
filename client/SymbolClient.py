@@ -99,7 +99,7 @@ class SymbolLightClient:
 			json_response = self._get_json('node/server')
 
 			if 'code' in json_response:
-				log.warning(f'unable to retrieve {self.node_host}:{self.node_port}/node/server')
+				log.warning(f'unable to retrieve {self.node_host}:{self.node_port}/node/server, error: {json_response["code"]}')
 				return None
 
 			return json_response['serverInfo']['restVersion']
