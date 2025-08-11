@@ -50,7 +50,9 @@ class NodeGeolocation:
 			nodes = json.load(nodes_file)
 
 		for node in nodes:
-			result = self._create_host_ip_info(node['host'])
+			host = node['host'] if 'host' in node else node['endpoint']['host']
+			result = self._create_host_ip_info(host)
+
 			if result is not None:
 				self.hosts.append(result)
 

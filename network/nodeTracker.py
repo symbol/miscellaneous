@@ -50,8 +50,14 @@ class NodeTracker:
 	def _count_roles(nodes):
 		"""
 		Counts the number of nodes for each role.
+		Handles both Symbol and Nem nodes.
 		"""
 
+		# Process Nem nodes or empty nodes
+		if not nodes or 'roles' not in nodes[0]:
+			return {'total': len(nodes) if nodes else 0}
+
+		# Process Symbol nodes
 		node_roles = ['1', '2', '3', '4', '5', '6', '7']
 
 		roles = {}
@@ -80,11 +86,11 @@ class NodeTracker:
 		except Exception as ex:
 			raise ValueError(f'Error reading input file: {str(ex)}') from ex
 
-		roles = self._count_roles(nodes)
+		values = self._count_roles(nodes)
 
 		new_snapshot = {
 			'date': datetime.utcnow().strftime('%Y-%m-%d'),
-			'values': roles
+			'values': values
 		}
 
 		# Save time series data
