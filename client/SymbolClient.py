@@ -20,7 +20,7 @@ VotingPublicKey = namedtuple('VotingPublicKey', ['start_epoch', 'end_epoch', 'pu
 
 XYM_NETWORK_MOSAIC_IDS_MAP = {
 	0x68: '6BED913FA20223F8',
-	0x98: '3A8416DB2D53B6C8',
+	0x98: '72C0212E67A08BCE',
 	'alias': 'E74B99BA41F4AFEE'
 }
 
