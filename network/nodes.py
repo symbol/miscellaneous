@@ -184,7 +184,7 @@ class NodeDownloader:
 	def _update(self, public_key, json_node, json_peers):
 		self.public_key_to_node_info_map[public_key] = json_node
 		for json_peer in json_peers:
-			host = json_peer.get('host')
+			host = json_peer['endpoint']['host'] if self.is_nem else json_peer['host']
 
 			if host not in self.visited_hosts:
 				if not any(host == api_client.node_host for api_client in self.remaining_api_clients):
