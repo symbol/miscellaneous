@@ -33,7 +33,7 @@ class ChainActivityDownloader:
 		log.debug(f'[{output_filepath}] download complete!')
 
 	def _download_batch(self, mode, start_date, end_date, output_filepath, csv_writer):
-		# pylint: disable=too-many-arguments
+		# pylint: disable=too-many-arguments, too-many-positional-arguments
 
 		api_client = create_blockchain_api_client(self.resources)
 		downloader = api_client.get_harvests if 'harvests' == mode else api_client.get_transfers
