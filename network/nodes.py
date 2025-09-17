@@ -18,7 +18,7 @@ class NodeDownloader:
 	# pylint: disable=too-many-instance-attributes
 
 	def __init__(self, resources, thread_count, timeout, network_name, certificate_directory):
-		# pylint: disable=too-many-arguments
+		# pylint: disable=too-many-arguments, too-many-positional-arguments
 
 		self.resources = resources
 		self.thread_count = thread_count
@@ -76,6 +76,7 @@ class NodeDownloader:
 			)
 
 			is_reachable = False
+			json_peers = []
 			try:
 				json_node = api_client.get_node_info()
 				json_node['extraData'] = {'balance': 0, 'height': 0, 'finalizedHeight': 0}
@@ -93,7 +94,6 @@ class NodeDownloader:
 				log.warning(
 					f'failed to load peers from {api_client.node_host}:{api_client.node_port} (reachable node? {is_reachable})\n{ex}'
 				)
-				json_peers = []
 
 			finally:
 				with self.lock:
