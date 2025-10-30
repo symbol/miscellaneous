@@ -150,7 +150,7 @@ class SymbolPeerClient():
 				with self.ssl_context.wrap_socket(sock) as ssock:
 					self._send_simple_request(ssock, packet_type)
 					return parser(self._read_simple_response(ssock))
-		except socket.timeout as ex:
+		except (socket.timeout, socket.gaierror) as ex:
 			raise ConnectionRefusedError from ex
 
 	@staticmethod
