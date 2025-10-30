@@ -25,7 +25,7 @@ class HarvesterDescriptor:
 class BatchDownloader:
 	# pylint: disable=too-many-instance-attributes
 
-	def __init__(self, resources, thread_count, mosaic_id):
+	def __init__(self, resources, thread_count, mosaic_id, timeout):
 		self.resources = resources
 		self.thread_count = thread_count
 		self.nodes = self.resources.nodes.find_all_not_by_role('seed-only')
@@ -38,10 +38,11 @@ class BatchDownloader:
 		self.public_key_to_descriptor_map = {}
 		self.lock = Lock()
 		self.mosaic_id = mosaic_id
+		self.timeout = timeout
 
 	def download_all(self, num_blocks):
 		for node_descriptor in self.nodes:
-			self.api_clients.append(locate_blockchain_client_class(self.resources)(node_descriptor.host, timeout=60, retry_post=True))
+			self.api_clients.append(locate_blockchain_client_class(self.resources)(node_descriptor.host, timeout=self.timeout, retry_count=2, retry_post=True))
 
 		chain_height = random.choice(self.api_clients).get_chain_height()
 
@@ -64,7 +65,6 @@ class BatchDownloader:
 			with self.lock:
 				height = self.next_height
 				if height > self.max_height:
-					time.sleep(2)
 					break
 
 				self.next_height += 1
@@ -96,6 +96,8 @@ class BatchDownloader:
 			with self.lock:
 				self.public_key_to_descriptor_map[signer_public_key] = descriptor
 
+			time.sleep(0.1)
+
 	def _get_balance_follow_links(self, api_client, address):
 		account_info = api_client.get_account_info(address)
 
@@ -109,10 +111,11 @@ class BatchDownloader:
 
 
 class HarvesterDownloader:
-	def __init__(self, resources, num_blocks, nodes_input_filepath):
+	def __init__(self, resources, num_blocks, nodes_input_filepath, timeout):
 		self.resources = resources
 		self.num_blocks = num_blocks
 		self.nodes_input_filepath = nodes_input_filepath
+		self.timeout = timeout
 
 		self.peers_map = {}
 
@@ -121,7 +124,7 @@ class HarvesterDownloader:
 
 		log.info(f'downloading harvester activity to {output_filepath} for last {self.num_blocks} blocks')
 
-		batch_downloader = BatchDownloader(self.resources, thread_count, mosaic_id)
+		batch_downloader = BatchDownloader(self.resources, thread_count, mosaic_id, self.timeout)
 		batch_downloader.download_all(self.num_blocks)
 
 		with open(output_filepath, 'wt', encoding='utf8') as outfile:
@@ -130,6 +133,9 @@ class HarvesterDownloader:
 			csv_writer.writeheader()
 
 			for harvester_descriptor in batch_downloader.public_key_to_descriptor_map.values():
+				if harvester_descriptor is None:
+					continue
+
 				node_descriptor = self.peers_map.get(harvester_descriptor.main_public_key, EMPTY_NODE_DESCRIPTOR)
 
 				csv_writer.writerow({
@@ -159,11 +165,12 @@ def main():
 	parser.add_argument('--output', help='output file', required=True)
 	parser.add_argument('--thread-count', help='number of threads', type=int, default=16)
 	parser.add_argument('--mosaic-id', help='mosaic id', default=MAINNET_XYM_MOSAIC_ID)
+	parser.add_argument('--timeout', help='peer timeout', type=int, default=20)
 	args = parser.parse_args()
 
 	resources = load_resources(args.resources)
 	blocks_per_day = 60 if 'nem' == resources.friendly_name else 120
-	downloader = HarvesterDownloader(resources, int(args.days * 24 * blocks_per_day), args.nodes)
+	downloader = HarvesterDownloader(resources, int(args.days * 24 * blocks_per_day), args.nodes, args.timeout)
 	downloader.download(args.thread_count, args.output, args.mosaic_id)
 
 

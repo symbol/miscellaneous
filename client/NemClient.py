@@ -29,6 +29,7 @@ class AccountInfo:
 class NemClient:
 	def __init__(self, host, port=7890, **kwargs):
 		self.session = create_http_session(**kwargs)
+		self.timeout = kwargs.get('timeout', 5)
 		(self.node_host, self.node_port) = (host, port)
 		self.network = Network.MAINNET
 
@@ -163,11 +164,12 @@ class NemClient:
 
 	def _get_json(self, rest_path):
 		json_http_headers = {'Content-type': 'application/json'}
-		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers).json()
+		return self.session.get(f'http://{self.node_host}:{self.node_port}/{rest_path}', headers=json_http_headers, timeout=self.timeout).json()
 
 	def _post_json(self, rest_path, params):
 		json_http_headers = {'Content-type': 'application/json'}
 		return self.session.post(
 			f'http://{self.node_host}:{self.node_port}/{rest_path}',
 			json=params,
-			headers=json_http_headers).json()
+			headers=json_http_headers,
+			timeout=self.timeout).json()

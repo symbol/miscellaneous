@@ -11,12 +11,12 @@ MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
 
 
 class RichListDownloader:
-	def __init__(self, resources, min_balance, mosaic_id, nodes_input_filepath):
+	def __init__(self, resources, min_balance, mosaic_id, nodes_input_filepath, timeout):
 		self.resources = resources
 		self.min_balance = min_balance
 		self.mosaic_id = mosaic_id
 		self.nodes_input_filepath = nodes_input_filepath
-		self.api_client = create_blockchain_api_client(self.resources)
+		self.api_client = create_blockchain_api_client(self.resources, None, timeout=timeout, retry_count=2)
 
 		self.finalization_epoch = 0
 		self.voters_map = {}
@@ -104,10 +104,11 @@ def main():
 	parser.add_argument('--mosaic-id', help='mosaic id', default=MAINNET_XYM_MOSAIC_ID)
 	parser.add_argument('--nodes', help='(optional) nodes json file')
 	parser.add_argument('--output', help='output file', required=True)
+	parser.add_argument('--timeout', help='peer timeout', type=int, default=20)
 	args = parser.parse_args()
 
 	resources = load_resources(args.resources)
-	downloader = RichListDownloader(resources, args.min_balance, args.mosaic_id, args.nodes)
+	downloader = RichListDownloader(resources, args.min_balance, args.mosaic_id, args.nodes, args.timeout)
 	downloader.download(args.output)
 
 

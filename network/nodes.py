@@ -66,9 +66,10 @@ class NodeDownloader:
 
 			with self.lock:
 				api_client = self._pop_next_api_client()
-				if not api_client:
-					time.sleep(2)
-					continue
+
+			if not api_client:
+				time.sleep(2)
+				continue
 
 			log.debug(
 				f'processing {api_client.node_host} [{len(self.public_key_to_node_info_map)} discovered,'
