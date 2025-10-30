@@ -12,6 +12,8 @@ MAINNET_XYM_MOSAIC_ID = '6BED913FA20223F8'
 
 class RichListDownloader:
 	def __init__(self, resources, min_balance, mosaic_id, nodes_input_filepath, timeout):
+		# pylint: disable=too-many-arguments, too-many-positional-arguments
+
 		self.resources = resources
 		self.min_balance = min_balance
 		self.mosaic_id = mosaic_id

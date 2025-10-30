@@ -42,7 +42,14 @@ class BatchDownloader:
 
 	def download_all(self, num_blocks):
 		for node_descriptor in self.nodes:
-			self.api_clients.append(locate_blockchain_client_class(self.resources)(node_descriptor.host, timeout=self.timeout, retry_count=2, retry_post=True))
+			self.api_clients.append(
+				locate_blockchain_client_class(self.resources)(
+					node_descriptor.host,
+					timeout=self.timeout,
+					retry_count=2,
+					retry_post=True
+				)
+			)
 
 		chain_height = random.choice(self.api_clients).get_chain_height()
 
