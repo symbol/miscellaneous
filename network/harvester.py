@@ -111,10 +111,6 @@ class BatchDownloader:
 				log.warning(f'failed to process block at height {height}: {ex}')
 				time.sleep(1)
 				continue
-			except Exception as ex:
-				log.error(f'unexpected error processing block at height {height}: {ex}')
-				time.sleep(1)
-				continue
 
 	def _get_balance_follow_links(self, api_client, address):
 		account_info = api_client.get_account_info(address)

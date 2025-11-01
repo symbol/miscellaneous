@@ -47,10 +47,12 @@ class NodeDownloader:
 	def discover(self):
 		log.info('seeding crawler with known hosts')
 		self.remaining_api_clients = [
-			self.api_client_class(node_descriptor.host, **self.api_client_kwargs) for node_descriptor in self.resources.nodes.find_all_by_role(None)
+			self.api_client_class(node_descriptor.host, **self.api_client_kwargs)
+			for node_descriptor in self.resources.nodes.find_all_by_role(None)
 		]
 		self.strong_api_clients = [
-			self.api_client_class(node_descriptor.host, **self.api_client_kwargs) for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
+			self.api_client_class(node_descriptor.host, **self.api_client_kwargs)
+			for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
 		]
 
 		log.info(f'starting {self.thread_count} crawler threads')
