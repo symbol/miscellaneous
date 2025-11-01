@@ -4,6 +4,7 @@ import random
 import time
 from threading import Lock, Thread
 
+from requests.exceptions import RequestException
 from zenlog import log
 
 from client.ResourceLoader import create_blockchain_facade, load_resources, locate_blockchain_client_class
@@ -68,41 +69,52 @@ class BatchDownloader:
 
 	def _download_thread(self):
 		while True:
-			with self.lock:
-				height = self.next_height
-				if height > self.max_height:
-					break
+			height = None
+			try:
+				with self.lock:
+					height = self.next_height
+					if height > self.max_height:
+						break
 
-				self.next_height += 1
+					self.next_height += 1
 
-			api_client = random.choice(self.api_clients)
+				api_client = random.choice(self.api_clients)
 
-			num_unique_harvesters = len(self.public_key_to_descriptor_map)
-			log.debug(f'processing block at {height} [{self.max_height - height} remaining, {num_unique_harvesters} unique harvesters]')
-			signer_public_key = api_client.get_harvester_signer_public_key(height)
+				num_unique_harvesters = len(self.public_key_to_descriptor_map)
+				log.debug(f'processing block at {height} [{self.max_height - height} remaining, {num_unique_harvesters} unique harvesters]')
+				signer_public_key = api_client.get_harvester_signer_public_key(height)
 
-			with self.lock:
-				if signer_public_key in self.public_key_to_descriptor_map:
-					continue
+				with self.lock:
+					if signer_public_key in self.public_key_to_descriptor_map:
+						continue
 
-				self.public_key_to_descriptor_map[signer_public_key] = None
+					self.public_key_to_descriptor_map[signer_public_key] = None
 
-			signer_address = self.facade.network.public_key_to_address(signer_public_key)
-			(main_address, main_public_key, balance) = self._get_balance_follow_links(api_client, signer_address)
+				signer_address = self.facade.network.public_key_to_address(signer_public_key)
+				(main_address, main_public_key, balance) = self._get_balance_follow_links(api_client, signer_address)
 
-			log.debug(f'signer {signer_address} is linked to {main_address} with balance {balance}')
+				log.debug(f'signer {signer_address} is linked to {main_address} with balance {balance}')
 
-			descriptor = HarvesterDescriptor()
-			descriptor.signer_public_key = signer_public_key
-			descriptor.signer_address = signer_address
-			descriptor.main_public_key = main_public_key
-			descriptor.main_address = main_address
-			descriptor.balance = balance
+				descriptor = HarvesterDescriptor()
+				descriptor.signer_public_key = signer_public_key
+				descriptor.signer_address = signer_address
+				descriptor.main_public_key = main_public_key
+				descriptor.main_address = main_address
+				descriptor.balance = balance
 
-			with self.lock:
-				self.public_key_to_descriptor_map[signer_public_key] = descriptor
+				with self.lock:
+					self.public_key_to_descriptor_map[signer_public_key] = descriptor
 
-			time.sleep(0.1)
+				time.sleep(0.5)
+
+			except (RequestException, TimeoutError, ConnectionRefusedError) as ex:
+				log.warning(f'failed to process block at height {height}: {ex}')
+				time.sleep(1)
+				continue
+			except Exception as ex:
+				log.error(f'unexpected error processing block at height {height}: {ex}')
+				time.sleep(1)
+				continue
 
 	def _get_balance_follow_links(self, api_client, address):
 		account_info = api_client.get_account_info(address)
