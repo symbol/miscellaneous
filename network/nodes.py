@@ -34,6 +34,12 @@ class NodeDownloader:
 		self.busy_thread_count = 0
 		self.lock = Lock()
 
+		self.api_client_kwargs = {
+			'timeout': self.timeout,
+			'retry_count': 2,
+			'retry_post': False
+		}
+
 	@property
 	def is_nem(self):
 		return 'nem' == self.resources.friendly_name
@@ -41,10 +47,10 @@ class NodeDownloader:
 	def discover(self):
 		log.info('seeding crawler with known hosts')
 		self.remaining_api_clients = [
-			self.api_client_class(node_descriptor.host) for node_descriptor in self.resources.nodes.find_all_by_role(None)
+			self.api_client_class(node_descriptor.host, **self.api_client_kwargs) for node_descriptor in self.resources.nodes.find_all_by_role(None)
 		]
 		self.strong_api_clients = [
-			self.api_client_class(node_descriptor.host) for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
+			self.api_client_class(node_descriptor.host, **self.api_client_kwargs) for node_descriptor in self.resources.nodes.find_all_not_by_role('seed-only')
 		]
 
 		log.info(f'starting {self.thread_count} crawler threads')
@@ -191,9 +197,8 @@ class NodeDownloader:
 				if not any(host == api_client.node_host for api_client in self.remaining_api_clients):
 					peer_api_client = self.api_client_class.from_node_info_dict(
 						json_peer,
-						retry_count=2,
-						timeout=self.timeout,
-						certificate_directory=self.certificate_directory)
+						certificate_directory=self.certificate_directory,
+						**self.api_client_kwargs)
 
 					self.remaining_api_clients.append(peer_api_client)
 
