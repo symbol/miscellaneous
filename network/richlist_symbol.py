@@ -18,14 +18,13 @@ class RichListDownloader:
 		self.min_balance = min_balance
 		self.mosaic_id = mosaic_id
 		self.nodes_input_filepath = nodes_input_filepath
-		self.timeout = timeout
 
-		self.api_client_kwargs = {
-			'timeout': self.timeout,
+		api_client_kwargs = {
+			'timeout': timeout,
 			'retry_count': 2,
 			'retry_post': False
 		}
-		self.api_client = create_blockchain_api_client(self.resources, **self.api_client_kwargs)
+		self.api_client = create_blockchain_api_client(self.resources, **api_client_kwargs)
 
 		self.finalization_epoch = 0
 		self.voters_map = {}
