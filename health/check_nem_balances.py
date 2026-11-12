@@ -1,6 +1,6 @@
 import argparse
+import datetime
 from collections import namedtuple
-from datetime import datetime
 
 from client.CoinGeckoClient import CoinGeckoClient
 from client.ResourceLoader import create_blockchain_api_client, load_resources
@@ -81,9 +81,11 @@ class NetworkPrinter:
 				self._print_header(group_description)
 
 			self.print_hline()
-			total_balance_usd = int(total_balance) * float(token_price)
-			print(f'{total_balance:,.6f} (~${total_balance_usd:,.2f} USD)')
-			self.print_hline()
+			if token_price is not None:
+				total_balance_usd = int(total_balance) * float(token_price)
+				print(f'{total_balance:,.6f} (~${total_balance_usd:,.2f} USD)')
+				self.print_hline()
+
 			print()
 
 	def _print_accounts(self, addresses, description):
@@ -174,15 +176,19 @@ def main():
 	parser.add_argument('--groups', help='account groups to include', type=str, nargs='+')
 	parser.add_argument('--use-names', help='display friendly account names', action='store_true')
 	parser.add_argument('--show-zero-balances', help='show zero balance accounts', action='store_true')
+	parser.add_argument('--show-usd', help='show usd equivalents', action='store_true')
 	args = parser.parse_args()
 
+	print(f' UTC Time: {datetime.datetime.now(datetime.UTC)}')
+
+	token_price = None
 	resources = load_resources(args.resources)
+	if args.show_usd:
+		coin_gecko_client = CoinGeckoClient()
+		token_price = coin_gecko_client.get_price_spot(resources.ticker_name, 'usd')
 
-	coin_gecko_client = CoinGeckoClient()
-	token_price = coin_gecko_client.get_price_spot(resources.ticker_name, 'usd')
+		print(f'{resources.currency_symbol.upper()} Price: {token_price:.6f}')
 
-	print(f' UTC Time: {datetime.utcnow()}')
-	print(f'{resources.currency_symbol.upper()} Price: {token_price:.6f}')
 	print()
 
 	network_printer_options = NetworkPrinterOptions(**{
